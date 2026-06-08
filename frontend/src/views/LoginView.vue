@@ -56,16 +56,26 @@
                 </button>
               </div>
 
-              <!-- Indicador de fuerza -->
-              <div v-if="contrasena.length > 0" class="mt-2">
-                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <!-- Indicador de completitud -->
+              <div v-if="contrasena.length > 0" class="mt-3 space-y-2">
+                <div class="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    class="h-full transition-all duration-300"
-                    :class="fuerzaContrasena.color"
-                    :style="{ width: fuerzaContrasena.pct + '%' }"
+                    class="h-full rounded-full transition-all duration-300"
+                    :class="requisitos.barColor"
+                    :style="{ width: (requisitos.cumplidos / 4 * 100) + '%' }"
                   />
                 </div>
-                <p class="text-xs text-gray-600 mt-1">Fuerza: {{ fuerzaContrasena.label }}</p>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div v-for="r in requisitos.lista" :key="r.texto" class="flex items-center gap-1.5">
+                    <svg v-if="r.ok" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span class="text-xs" :class="r.ok ? 'text-green-600' : 'text-gray-400'">{{ r.texto }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -111,14 +121,17 @@ const error = ref('')
 const intentos = ref(0)
 const loading = ref(false)
 
-const fuerzaContrasena = computed(() => {
+const requisitos = computed(() => {
   const p = contrasena.value
-  if (!p) return { pct: 0, label: '', color: 'bg-gray-300' }
-  if (p.length < 6) return { pct: 25, label: 'Débil', color: 'bg-red-500' }
-  const score = [/[A-Z]/.test(p), /[a-z]/.test(p), /[0-9]/.test(p)].filter(Boolean).length
-  if (score === 1) return { pct: 33, label: 'Débil', color: 'bg-red-500' }
-  if (score === 2) return { pct: 66, label: 'Media', color: 'bg-yellow-500' }
-  return { pct: 100, label: 'Fuerte', color: 'bg-green-500' }
+  const lista = [
+    { texto: 'Mínimo 6 caracteres', ok: p.length >= 6 },
+    { texto: 'Una mayúscula (A-Z)',  ok: /[A-Z]/.test(p) },
+    { texto: 'Una minúscula (a-z)',  ok: /[a-z]/.test(p) },
+    { texto: 'Un número (0-9)',      ok: /[0-9]/.test(p) }
+  ]
+  const cumplidos = lista.filter(r => r.ok).length
+  const barColor = cumplidos <= 1 ? 'bg-red-500' : cumplidos <= 2 ? 'bg-yellow-500' : cumplidos === 3 ? 'bg-blue-500' : 'bg-green-500'
+  return { lista, cumplidos, barColor }
 })
 
 async function handleSubmit() {

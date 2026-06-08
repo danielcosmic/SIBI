@@ -5,7 +5,7 @@
 
         <!-- Logos -->
         <div class="flex items-center gap-6">
-          <img :src="logoUCR" alt="UCR" class="h-10 object-contain brightness-0 invert opacity-90" />
+          <img :src="logoUCR" alt="UCR" class="h-7 object-contain brightness-0 invert opacity-90" />
           <div class="w-px h-8 bg-white/30" />
           <img :src="logoEIC" alt="EIC" class="h-10 object-contain brightness-0 invert opacity-90" />
         </div>
