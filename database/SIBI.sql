@@ -158,4 +158,4 @@ INSERT INTO Categoria (Nombre, Icono) VALUES
 -- Usuario administrador inicial con contraseña temporal.
 -- El hash debe reemplazarse por uno generado con BCrypt antes de primer uso.
 INSERT INTO Usuario (Nombre, Correo, Contrasena, Permisos, EsContrasenaTemporal) VALUES
-    ('Administrador SIBI', 'admin@ucr.ac.cr', 'HASH_PENDIENTE', 'Administradora', 1);
+    ('Administrador SIBI', 'soporte.eic@ucr.ac.cr', 'HASH_PENDIENTE', 'Administradora', 1);
