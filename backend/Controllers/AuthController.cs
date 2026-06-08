@@ -1,0 +1,54 @@
+using backend.DTOs;
+using backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace backend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    private readonly AuthService _auth;
+
+    public AuthController(AuthService auth) => _auth = auth;
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var response = await _auth.LoginAsync(request.Correo, request.Contrasena);
+        if (response is null)
+            return Unauthorized(new { mensaje = "Credenciales incorrectas o cuenta bloqueada." });
+        return Ok(response);
+    }
+
+    [HttpPost("recuperar")]
+    public async Task<IActionResult> Recuperar([FromBody] RecuperarContrasenaRequest request)
+    {
+        var tempPassword = await _auth.RecuperarContrasenaAsync(request.Correo);
+        if (tempPassword is null)
+            return NotFound(new { mensaje = "Correo no encontrado o cuenta inactiva." });
+
+        // En producción esta contraseña se enviaría por correo institucional
+        return Ok(new { contrasenaTemp = tempPassword });
+    }
+
+    [Authorize]
+    [HttpPost("cambiar-contrasena")]
+    public async Task<IActionResult> CambiarContrasena([FromBody] CambiarContrasenaRequest request)
+    {
+        var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var ok = await _auth.CambiarContrasenaAsync(correo, request.NuevaContrasena);
+        if (!ok)
+            return BadRequest(new { mensaje = "La contraseña debe tener mínimo 6 caracteres, una mayúscula, una minúscula y un número." });
+        return NoContent();
+    }
+
+    [HttpGet("hash-temp")]
+    public IActionResult HashTemp()
+    {
+        var hash = BCrypt.Net.BCrypt.HashPassword("CambiarEsto123!");
+        return Ok(hash);
+    }
+}

@@ -1,0 +1,149 @@
+<template>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#4da6ff] via-[#0066cc] to-[#003d7a]">
+    <div class="w-full max-w-md">
+      <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+          <div class="w-20 h-20 bg-gradient-to-br from-[#003d7a] to-[#0066cc] rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span class="text-white text-2xl font-bold">UCR</span>
+          </div>
+          <h1 class="text-2xl font-bold text-[#003d7a] mb-2">Inventario EIC</h1>
+          <p class="text-gray-600 text-sm">Universidad de Costa Rica</p>
+        </div>
+
+        <!-- Error -->
+        <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-sm text-red-700">{{ error }}</p>
+        </div>
+
+        <!-- Form -->
+        <form @submit.prevent="handleSubmit" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Correo Institucional</label>
+            <input
+              v-model="correo"
+              type="email"
+              placeholder="usuario@ucr.ac.cr"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <div class="relative">
+              <input
+                v-model="contrasena"
+                :type="mostrarContrasena ? 'text' : 'password'"
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none transition pr-10"
+              />
+              <button
+                type="button"
+                @click="mostrarContrasena = !mostrarContrasena"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                <svg v-if="!mostrarContrasena" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Indicador de fuerza -->
+            <div v-if="contrasena.length > 0" class="mt-2">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  class="h-full transition-all duration-300"
+                  :class="fuerzaContrasena.color"
+                  :style="{ width: fuerzaContrasena.pct + '%' }"
+                />
+              </div>
+              <p class="text-xs text-gray-600 mt-1">Fuerza: {{ fuerzaContrasena.label }}</p>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            :disabled="intentos >= 3 || loading"
+            class="w-full bg-[#003d7a] text-white py-2.5 rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+          >
+            {{ loading ? 'Ingresando...' : 'Iniciar Sesión' }}
+          </button>
+        </form>
+
+        <div class="mt-6 text-center">
+          <RouterLink to="/recuperar-contrasena" class="text-sm text-[#0066cc] hover:underline">
+            ¿Olvidaste tu contraseña?
+          </RouterLink>
+        </div>
+        <div class="mt-4 text-center text-xs text-gray-500">
+          Intentos: {{ intentos }}/3
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import authService from '@/services/authService'
+
+const router = useRouter()
+const auth = useAuthStore()
+
+const correo = ref('')
+const contrasena = ref('')
+const mostrarContrasena = ref(false)
+const error = ref('')
+const intentos = ref(0)
+const loading = ref(false)
+
+const fuerzaContrasena = computed(() => {
+  const p = contrasena.value
+  if (!p) return { pct: 0, label: '', color: 'bg-gray-300' }
+  if (p.length < 6) return { pct: 25, label: 'Débil', color: 'bg-red-500' }
+  const score = [/[A-Z]/.test(p), /[a-z]/.test(p), /[0-9]/.test(p)].filter(Boolean).length
+  if (score === 1) return { pct: 33, label: 'Débil', color: 'bg-red-500' }
+  if (score === 2) return { pct: 66, label: 'Media', color: 'bg-yellow-500' }
+  return { pct: 100, label: 'Fuerte', color: 'bg-green-500' }
+})
+
+async function handleSubmit() {
+  if (intentos.value >= 3) return
+  error.value = ''
+
+  if (!correo.value.endsWith('@ucr.ac.cr')) {
+    error.value = 'Debe usar un correo institucional @ucr.ac.cr'
+    intentos.value++
+    return
+  }
+
+  loading.value = true
+  try {
+    const { data } = await authService.login(correo.value, contrasena.value)
+    auth.setAuth(data.token, {
+      correo: data.correo,
+      nombre: data.nombre,
+      permisos: data.permisos
+    })
+    if (data.esContrasenaTemporal) {
+      router.push('/cambiar-contrasena')
+    } else {
+      router.push('/dashboard')
+    }
+  } catch {
+    error.value = 'Credenciales incorrectas o cuenta bloqueada.'
+    intentos.value++
+  } finally {
+    loading.value = false
+  }
+}
+</script>
