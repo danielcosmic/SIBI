@@ -13,6 +13,12 @@ const routes = [
     component: () => import('@/views/RecuperarContrasenaView.vue')
   },
   {
+    path: '/cambiar-contrasena',
+    name: 'CambiarContrasena',
+    component: () => import('@/views/CambiarContrasenaView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     component: () => import('@/components/AppLayout.vue'),
     meta: { requiresAuth: true },
@@ -61,15 +67,22 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
 
+  // Sin sesión → solo puede ir a Login o RecuperarContrasena
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'Login' }
   }
 
-  if (to.meta.requiresAdmin && !auth.esAdministradora) {
+  // Con contraseña temporal → solo puede ir a CambiarContrasena
+  if (auth.isAuthenticated && auth.esContrasenaTemporal && to.name !== 'CambiarContrasena') {
+    return { name: 'CambiarContrasena' }
+  }
+
+  // Ya autenticado sin contraseña temp → no puede volver a Login/Recuperar
+  if ((to.name === 'Login' || to.name === 'RecuperarContrasena') && auth.isAuthenticated && !auth.esContrasenaTemporal) {
     return { name: 'Dashboard' }
   }
 
-  if ((to.name === 'Login' || to.name === 'RecuperarContrasena') && auth.isAuthenticated) {
+  if (to.meta.requiresAdmin && !auth.esAdministradora) {
     return { name: 'Dashboard' }
   }
 })

@@ -150,13 +150,10 @@ async function handleSubmit() {
     auth.setAuth(data.token, {
       correo: data.correo,
       nombre: data.nombre,
-      permisos: data.permisos
+      permisos: data.permisos,
+      esContrasenaTemporal: data.esContrasenaTemporal
     })
-    if (data.esContrasenaTemporal) {
-      router.push('/cambiar-contrasena')
-    } else {
-      router.push('/dashboard')
-    }
+    router.push(data.esContrasenaTemporal ? '/cambiar-contrasena' : '/dashboard')
   } catch {
     error.value = 'Credenciales incorrectas o cuenta bloqueada.'
     intentos.value++

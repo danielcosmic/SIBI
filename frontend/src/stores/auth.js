@@ -11,7 +11,8 @@ export const useAuthStore = defineStore('auth', {
     esAdministradora: (state) => state.usuario?.permisos === 'Administradora',
     esGTI: (state) => ['GTI', 'Administradora'].includes(state.usuario?.permisos || ''),
     nombre: (state) => state.usuario?.nombre || '',
-    correo: (state) => state.usuario?.correo || ''
+    correo: (state) => state.usuario?.correo || '',
+    esContrasenaTemporal: (state) => !!state.usuario?.esContrasenaTemporal
   },
   actions: {
     setAuth(token, usuario) {
@@ -19,6 +20,12 @@ export const useAuthStore = defineStore('auth', {
       this.usuario = usuario
       localStorage.setItem('sibi_token', token)
       localStorage.setItem('sibi_usuario', JSON.stringify(usuario))
+    },
+    clearTempFlag() {
+      if (this.usuario) {
+        this.usuario = { ...this.usuario, esContrasenaTemporal: false }
+        localStorage.setItem('sibi_usuario', JSON.stringify(this.usuario))
+      }
     },
     logout() {
       this.token = null
