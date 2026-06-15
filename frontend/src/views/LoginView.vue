@@ -5,8 +5,8 @@
         <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
           <!-- Logo -->
           <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-gradient-to-br from-[#003d7a] to-[#0066cc] rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-              <span class="text-white text-2xl font-bold tracking-wide">SIBI</span>
+            <div class="w-52 h-52 mx-auto mb-4">
+              <img :src="sibiLogo" alt="SIBI" class="w-full h-full object-contain" />
             </div>
             <h1 class="text-2xl font-bold text-[#003d7a] mb-2">Inventario EIC</h1>
             <p class="text-gray-600 text-sm">Universidad de Costa Rica</p>
@@ -110,6 +110,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/authService'
 import AppFooter from '@/components/AppFooter.vue'
+import sibiLogo from '@/assets/SIBI_logo_6000_transparente.png'
 
 const router = useRouter()
 const auth = useAuthStore()

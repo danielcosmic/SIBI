@@ -2,18 +2,14 @@
   <div class="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
     <!-- Sidebar -->
     <div class="w-64 bg-[#003d7a] text-white flex flex-col flex-shrink-0">
-      <!-- Logo -->
-      <div class="p-6 border-b border-white/10">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-white to-blue-100 rounded-lg flex items-center justify-center shadow-md">
-            <span class="text-[#003d7a] font-bold text-lg">UCR</span>
-          </div>
-          <div>
-            <h1 class="font-bold text-lg">Inventario EIC</h1>
-            <p class="text-xs text-blue-200">Sistema de Gestión</p>
+      <!-- Logo — redirige al dashboard -->
+      <RouterLink to="/dashboard" class="p-6 border-b border-white/10 hover:bg-white/5 transition">
+        <div class="flex items-center justify-center">
+          <div class="w-32 h-16 flex-shrink-0">
+            <img :src="sibiLogo" alt="SIBI" class="w-full h-full object-contain rounded-lg" />
           </div>
         </div>
-      </div>
+      </RouterLink>
 
       <!-- Navigation -->
       <nav class="flex-1 p-4 space-y-1">
@@ -48,7 +44,7 @@
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top Bar -->
-      <div class="bg-white/80 backdrop-blur-md border-b border-gray-200/50 px-8 py-4 shadow-sm">
+      <div class="bg-white/80 backdrop-blur-md border-b border-gray-200/50 px-8 py-4 shadow-sm relative z-10">
         <div class="flex items-center justify-between">
           <div class="flex-1 max-w-xl">
             <div class="relative">
@@ -63,17 +59,32 @@
             </div>
           </div>
 
+          <!-- Botón de perfil -->
           <div class="flex items-center gap-4 ml-8">
-            <div class="flex items-center gap-3 pl-4 border-l border-gray-300">
-              <div class="w-10 h-10 bg-[#003d7a] rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            <div class="pl-4 border-l border-gray-300">
+              <button
+                ref="perfilBtn"
+                @click="togglePerfil"
+                class="flex items-center gap-3 hover:bg-gray-100 rounded-xl px-3 py-2 transition"
+              >
+                <div class="w-10 h-10 bg-[#003d7a] rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <p class="text-sm font-medium text-gray-800">{{ auth.nombre }}</p>
+                  <p class="text-xs text-gray-500">{{ auth.permisos }}</p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                  :class="perfilAbierto ? 'rotate-180' : ''"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
-              </div>
-              <div>
-                <p class="text-sm font-medium text-gray-800">{{ auth.nombre }}</p>
-                <p class="text-xs text-gray-500">{{ auth.permisos }}</p>
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -84,30 +95,123 @@
         <RouterView />
       </div>
     </div>
+
+    <!-- Dropdown teleportado al body para evitar problemas de stacking context -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition ease-out duration-150"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition ease-in duration-100"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="perfilAbierto"
+          class="fixed w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+          :style="dropdownStyle"
+          style="z-index: 9999"
+        >
+          <!-- Cabecera -->
+          <div class="bg-gradient-to-br from-[#003d7a] to-[#0066cc] px-5 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-white font-semibold">{{ auth.nombre }}</p>
+                <p class="text-blue-200 text-xs mt-0.5">{{ auth.correo }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detalles -->
+          <div class="p-4 space-y-1">
+            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+              <span class="text-xs text-gray-500 uppercase tracking-wide font-medium">Rol</span>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold" :class="rolClase(auth.permisos)">
+                {{ auth.permisos }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+              <span class="text-xs text-gray-500 uppercase tracking-wide font-medium">Correo</span>
+              <span class="text-sm text-gray-700 font-medium">{{ auth.correo }}</span>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <span class="text-xs text-gray-500 uppercase tracking-wide font-medium">Estado</span>
+              <span class="flex items-center gap-1.5 text-sm text-green-600 font-medium">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                Activo
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </Transition>
+
+      <!-- Overlay para cerrar al hacer click fuera -->
+      <div
+        v-if="perfilAbierto"
+        class="fixed inset-0"
+        style="z-index: 9998"
+        @click="perfilAbierto = false"
+      />
+    </Teleport>
+
+    <AppDialog />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppDialog from '@/components/AppDialog.vue'
+import sibiLogo from '@/assets/SIBI_logo_4096_fondo_oscuro.png'
 
 const auth = useAuthStore()
 const router = useRouter()
+const perfilAbierto = ref(false)
+const perfilBtn = ref(null)
+const dropdownStyle = ref({})
+
+function togglePerfil() {
+  if (!perfilAbierto.value) {
+    const rect = perfilBtn.value.getBoundingClientRect()
+    dropdownStyle.value = {
+      top: `${rect.bottom + 8}px`,
+      right: `${window.innerWidth - rect.right}px`
+    }
+  }
+  perfilAbierto.value = !perfilAbierto.value
+}
 
 const navItems = computed(() => {
   const items = [
     { to: '/dashboard', label: 'Dashboard', icon: IconDashboard },
     { to: '/inventario', label: 'Inventario', icon: IconBox },
-    { to: '/historial', label: 'Historial', icon: IconHistory },
-    { to: '/categorias', label: 'Categorías', icon: IconFolder },
-    { to: '/desecho', label: 'Desecho', icon: IconTrash }
   ]
-  if (auth.esAdministradora) {
-    items.splice(3, 0, { to: '/usuarios', label: 'Usuarios', icon: IconUsers })
+  if (auth.esGTI) {
+    items.push({ to: '/encargados', label: 'Encargados', icon: IconPersonCard })
   }
+  items.push({ to: '/historial', label: 'Historial', icon: IconHistory })
+  if (auth.esAdministradora) {
+    items.push({ to: '/usuarios', label: 'Usuarios', icon: IconUsers })
+  }
+  items.push({ to: '/categorias', label: 'Categorías', icon: IconFolder })
+  items.push({ to: '/desecho', label: 'Desecho', icon: IconTrash })
   return items
 })
+
+const rolClases = {
+  Administradora: 'bg-purple-100 text-purple-800',
+  GTI: 'bg-blue-100 text-blue-800',
+  JefaAdministrativa: 'bg-green-100 text-green-800',
+  Invitado: 'bg-gray-100 text-gray-800'
+}
+function rolClase(r) { return rolClases[r] || 'bg-gray-100 text-gray-800' }
 
 function cerrarSesion() {
   auth.logout()
@@ -115,7 +219,7 @@ function cerrarSesion() {
 }
 </script>
 
-<!-- Inline icon components para no depender de una librería de iconos -->
+<!-- Inline icon components -->
 <script>
 const IconDashboard = {
   template: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>`
@@ -134,5 +238,8 @@ const IconFolder = {
 }
 const IconTrash = {
   template: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`
+}
+const IconPersonCard = {
+  template: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c0 1.657 1.343 2 3 2s3-.343 3-2" /></svg>`
 }
 </script>

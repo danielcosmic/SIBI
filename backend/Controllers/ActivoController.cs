@@ -108,12 +108,12 @@ public class ActivoController : ControllerBase
         await using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
+            var encargado = await _db.Encargados.FindAsync(request.EncargadoId);
+            if (encargado is null)
+                return BadRequest(new { mensaje = "El encargado seleccionado no existe." });
+
             if (!await _db.Placas.AnyAsync(p => p.Numero == request.Placa))
                 _db.Placas.Add(new Placa { Numero = request.Placa, Tipo = request.TipoPlaca });
-
-            var encargado = new Encargado { Nombre = request.NombreEncargado, Rol = request.RolEncargado };
-            _db.Encargados.Add(encargado);
-            await _db.SaveChangesAsync();
 
             var ubicacion = new Ubicacion
             {
@@ -164,27 +164,33 @@ public class ActivoController : ControllerBase
 
         if (activo is null) return NotFound();
 
+        var encargado = await _db.Encargados.FindAsync(request.EncargadoId);
+        if (encargado is null)
+            return BadRequest(new { mensaje = "El encargado seleccionado no existe." });
+
         var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var ubicacionCambiada = activo.UbicacionNavigation.Actual != request.UbicacionActual;
+        var encargadoCambiado = activo.UbicacionNavigation.EncargadoActualId != request.EncargadoId;
 
-        if (activo.UbicacionNavigation.Actual != request.UbicacionActual)
+        if (ubicacionCambiada || encargadoCambiado)
         {
-            var nuevoEncargado = new Encargado { Nombre = request.NombreEncargado, Rol = request.RolEncargado };
-            _db.Encargados.Add(nuevoEncargado);
-            await _db.SaveChangesAsync();
-
             var nuevaUbicacion = new Ubicacion
             {
                 Actual = request.UbicacionActual,
                 Anterior = activo.UbicacionNavigation.Actual,
-                EncargadoActualId = nuevoEncargado.Id,
+                EncargadoActualId = encargado.Id,
                 EncargadoAnteriorId = activo.UbicacionNavigation.EncargadoActualId
             };
             _db.Ubicaciones.Add(nuevaUbicacion);
             await _db.SaveChangesAsync();
-
             activo.UbicacionId = nuevaUbicacion.Id;
-            await _historial.RegistrarAsync(placa, correo, "CambioUbicacion",
-                $"Ubicación cambiada a {request.UbicacionActual}.");
+
+            if (ubicacionCambiada)
+                await _historial.RegistrarAsync(placa, correo, "CambioUbicacion",
+                    $"Ubicación cambiada a {request.UbicacionActual}.");
+            if (encargadoCambiado)
+                await _historial.RegistrarAsync(placa, correo, "CambioEncargado",
+                    $"Encargado cambiado a {encargado.Nombre}.");
         }
 
         if (activo.Estado != request.Estado)
@@ -242,6 +248,7 @@ public class ActivoController : ControllerBase
         a.Observaciones,
         a.UbicacionNavigation.Actual,
         a.UbicacionNavigation.Anterior,
+        a.UbicacionNavigation.EncargadoActualId,
         a.UbicacionNavigation.EncargadoActual.Nombre,
         a.UbicacionNavigation.EncargadoAnterior.Nombre,
         a.Estado,

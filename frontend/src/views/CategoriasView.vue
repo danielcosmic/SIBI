@@ -44,7 +44,8 @@
     </div>
 
     <!-- Modal crear -->
-    <div v-if="modalOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Teleport to="body">
+    <div v-if="modalOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
       <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl max-w-md w-full border border-blue-100/50">
         <div class="bg-[#003d7a] text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <h2 class="text-xl font-bold">{{ editando ? 'Editar Categoría' : 'Nueva Categoría' }}</h2>
@@ -71,15 +72,18 @@
         </form>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDialog } from '@/composables/useDialog'
 import categoriaService from '@/services/categoriaService'
 
 const auth = useAuthStore()
+const dialog = useDialog()
 const categorias = ref([])
 const modalOpen = ref(false)
 const editando = ref(null)
@@ -116,12 +120,22 @@ async function guardar() {
 }
 
 async function eliminar(cat) {
-  if (!confirm(`¿Eliminar la categoría "${cat.nombre}"? Solo es posible si no tiene activos asociados.`)) return
+  const ok = await dialog.confirm({
+    title: 'Eliminar Categoría',
+    message: `¿Eliminar la categoría "${cat.nombre}"? Solo es posible si no tiene activos asociados.`,
+    confirmText: 'Eliminar',
+    type: 'danger'
+  })
+  if (!ok) return
   try {
     await categoriaService.eliminar(cat.id)
     await cargar()
   } catch (e) {
-    alert(e.response?.data?.mensaje || 'No se pudo eliminar la categoría.')
+    await dialog.alert({
+      title: 'No se pudo eliminar',
+      message: e.response?.data?.mensaje || 'No se pudo eliminar la categoría.',
+      type: 'danger'
+    })
   }
 }
 </script>

@@ -117,7 +117,8 @@
     </div>
 
     <!-- Modal confirmación -->
-    <div v-if="itemSeleccionado" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Teleport to="body">
+    <div v-if="itemSeleccionado" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
       <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full border border-red-100/50">
         <div class="bg-red-600 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <h2 class="text-xl font-bold">Confirmar Eliminación</h2>
@@ -147,15 +148,18 @@
         </div>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDialog } from '@/composables/useDialog'
 import desechoService from '@/services/desechoService'
 
 const auth = useAuthStore()
+const dialog = useDialog()
 const items = ref([])
 const loading = ref(false)
 const itemSeleccionado = ref(null)
@@ -178,16 +182,35 @@ async function confirmarEliminar() {
     itemSeleccionado.value = null
     await cargar()
   } catch (e) {
-    alert(e.response?.data?.mensaje || 'Error al eliminar.')
+    await dialog.alert({
+      title: 'Error al eliminar',
+      message: e.response?.data?.mensaje || 'No se pudo completar la eliminación.',
+      type: 'danger'
+    })
   } finally {
     actionLoading.value = false
   }
 }
 
 async function rechazar(placa) {
-  if (!confirm('¿Rechazar la eliminación y restaurar este activo a estado Activo?')) return
-  try { await desechoService.rechazar(placa); await cargar() }
-  catch (e) { alert(e.response?.data?.mensaje || 'Error.') }
+  const ok = await dialog.confirm({
+    title: 'Rechazar Eliminación',
+    message: '¿Rechazar la eliminación y restaurar este activo a estado Activo?',
+    confirmText: 'Rechazar',
+    cancelText: 'Cancelar',
+    type: 'warning'
+  })
+  if (!ok) return
+  try {
+    await desechoService.rechazar(placa)
+    await cargar()
+  } catch (e) {
+    await dialog.alert({
+      title: 'Error',
+      message: e.response?.data?.mensaje || 'No se pudo rechazar la eliminación.',
+      type: 'danger'
+    })
+  }
 }
 
 function formatFecha(f) {

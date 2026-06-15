@@ -138,6 +138,7 @@
       :mode="modalMode"
       :activo="activoSeleccionado"
       :categorias="categorias"
+      :encargados="encargados"
       @close="modalOpen = false"
       @saved="onSaved"
     />
@@ -147,11 +148,14 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDialog } from '@/composables/useDialog'
 import activoService from '@/services/activoService'
 import categoriaService from '@/services/categoriaService'
+import encargadoService from '@/services/encargadoService'
 import ActivoModal from '@/components/ActivoModal.vue'
 
 const auth = useAuthStore()
+const dialog = useDialog()
 
 const activos = ref([])
 const total = ref(0)
@@ -161,6 +165,7 @@ const busqueda = ref('')
 const categoriaId = ref('')
 const estado = ref('')
 const categorias = ref([])
+const encargados = ref([])
 const loading = ref(false)
 const modalOpen = ref(false)
 const modalMode = ref('create')
@@ -184,8 +189,9 @@ async function cargarActivos() {
 }
 
 onMounted(async () => {
-  const { data } = await categoriaService.listar()
-  categorias.value = data
+  const [catRes, encRes] = await Promise.all([categoriaService.listar(), encargadoService.listar()])
+  categorias.value = catRes.data
+  encargados.value = encRes.data
   await cargarActivos()
 })
 
@@ -199,12 +205,22 @@ function abrirModal(mode, activo) {
 }
 
 async function confirmarEliminar(activo) {
-  if (!confirm(`¿Eliminar el activo ${activo.placa}? Solo es posible si lleva +1 año en Desecho.`)) return
+  const ok = await dialog.confirm({
+    title: 'Eliminar Activo',
+    message: `¿Eliminar el activo ${activo.placa}? Solo es posible si lleva más de 1 año en estado Desecho.`,
+    confirmText: 'Eliminar',
+    type: 'danger'
+  })
+  if (!ok) return
   try {
     await activoService.eliminar(activo.placa)
     await cargarActivos()
   } catch (e) {
-    alert(e.response?.data?.mensaje || 'No se pudo eliminar el activo.')
+    await dialog.alert({
+      title: 'No se pudo eliminar',
+      message: e.response?.data?.mensaje || 'No se pudo eliminar el activo.',
+      type: 'danger'
+    })
   }
 }
 

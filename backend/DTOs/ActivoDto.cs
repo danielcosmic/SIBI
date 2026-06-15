@@ -12,6 +12,7 @@ public record ActivoDto(
     string? Observaciones,
     string UbicacionActual,
     string UbicacionAnterior,
+    Guid EncargadoActualId,
     string EncargadoActual,
     string EncargadoAnterior,
     string Estado,

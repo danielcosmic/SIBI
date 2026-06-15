@@ -76,7 +76,8 @@
     </div>
 
     <!-- Modal crear/editar -->
-    <div v-if="mostrarModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Teleport to="body">
+    <div v-if="mostrarModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
       <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
         <div class="bg-[#003d7a] text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <h2 class="text-xl font-bold">{{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
@@ -124,6 +125,7 @@
         </form>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
@@ -187,9 +189,9 @@ const rolClases = { Administradora: 'bg-purple-100 text-purple-800', GTI: 'bg-bl
 function rolClase(r) { return rolClases[r] || 'bg-gray-100 text-gray-800' }
 
 const rolesInfo = [
-  { nombre: 'Administradora', borde: 'border-purple-500', bg: 'bg-purple-100', icono: 'text-purple-600', check: 'text-purple-500', permisos: ['Aprobar cambios de placa', 'Crear usuarios', 'Generar claves temporales', 'Aceptar/rechazar eliminaciones', 'Agregar categorías'] },
-  { nombre: 'GTI', borde: 'border-blue-500', bg: 'bg-blue-100', icono: 'text-blue-600', check: 'text-blue-500', permisos: ['Crear activos', 'Editar ubicación', 'Editar responsable'] },
-  { nombre: 'Jefa Administrativa', borde: 'border-green-500', bg: 'bg-green-100', icono: 'text-green-600', check: 'text-green-500', permisos: ['Solicitar cambios', 'Aprobar procesos administrativos'] },
-  { nombre: 'Invitado', borde: 'border-gray-500', bg: 'bg-gray-100', icono: 'text-gray-600', check: 'text-gray-500', permisos: ['Solo lectura limitada'] }
+  { nombre: 'Administradora', borde: 'border-purple-500', bg: 'bg-purple-100', icono: 'text-purple-600', check: 'text-purple-500', permisos: ['Ver, crear y editar activos del inventario', 'Aprobar cambios de placa', 'Crear usuarios y generar claves temporales', 'Aceptar/rechazar solicitudes de eliminación', 'Agregar y gestionar categorías'] },
+  { nombre: 'GTI', borde: 'border-blue-500', bg: 'bg-blue-100', icono: 'text-blue-600', check: 'text-blue-500', permisos: ['Ver, crear y editar activos del inventario', 'Editar ubicación y responsable', 'Registrar activos para desecho'] },
+  { nombre: 'Jefa Administrativa', borde: 'border-green-500', bg: 'bg-green-100', icono: 'text-green-600', check: 'text-green-500', permisos: ['Ver el inventario', 'Solicitar cambios en elementos del inventario', 'Aprobar procesos administrativos'] },
+  { nombre: 'Invitado', borde: 'border-gray-500', bg: 'bg-gray-100', icono: 'text-gray-600', check: 'text-gray-500', permisos: ['Solo lectura del inventario'] }
 ]
 </script>

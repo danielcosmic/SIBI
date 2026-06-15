@@ -86,7 +86,7 @@ CREATE TABLE Activo (
     NumSerial      VARCHAR(30)  NOT NULL,
     Articulo       VARCHAR(20)  NOT NULL,
     CategoriaId    INT          NOT NULL,
-    Observaciones  VARCHAR(40)  NULL,
+    Observaciones  VARCHAR(200) NULL,
     Ubicacion      BIGINT       NOT NULL,
     Estado         VARCHAR(15)  NOT NULL DEFAULT 'Activo',
     FechaDesecho   DATE         NULL,

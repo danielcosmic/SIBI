@@ -1,5 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <Teleport to="body">
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <!-- Header -->
       <div class="bg-[#003d7a] text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
@@ -99,17 +100,12 @@
           <!-- Categoría -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Categoría <span class="text-red-500">*</span></label>
-            <select
+            <SearchableSelect
               v-model="form.categoriaId"
+              :options="categoriasOptions"
               :disabled="mode === 'view'"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100"
-            >
-              <option value="" disabled>Seleccione una categoría</option>
-              <option v-for="cat in categorias" :key="cat.id" :value="cat.id">
-                {{ cat.icono }} {{ cat.nombre }}
-              </option>
-            </select>
+              placeholder="Buscar categoría..."
+            />
           </div>
 
           <!-- Estado (solo en edición) -->
@@ -139,29 +135,14 @@
             />
           </div>
 
-          <!-- Nombre Encargado -->
+          <!-- Encargado -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Encargado <span class="text-red-500">*</span></label>
-            <input
-              v-model="form.nombreEncargado"
-              type="text"
-              maxlength="50"
+            <label class="block text-sm font-medium text-gray-700 mb-1">Encargado <span class="text-red-500">*</span></label>
+            <SearchableSelect
+              v-model="form.encargadoId"
+              :options="encargadosOptions"
               :disabled="mode === 'view'"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100"
-            />
-          </div>
-
-          <!-- Rol Encargado -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Rol del Encargado <span class="text-red-500">*</span></label>
-            <input
-              v-model="form.rolEncargado"
-              type="text"
-              maxlength="30"
-              :disabled="mode === 'view'"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100"
+              placeholder="Buscar encargado..."
             />
           </div>
         </div>
@@ -171,7 +152,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
           <textarea
             v-model="form.observaciones"
-            maxlength="40"
+            maxlength="200"
             rows="2"
             :disabled="mode === 'view'"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none resize-none disabled:bg-gray-100"
@@ -201,19 +182,29 @@
       </form>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import activoService from '@/services/activoService'
+import SearchableSelect from '@/components/SearchableSelect.vue'
 
 const props = defineProps({
   mode: { type: String, required: true }, // 'create' | 'edit' | 'view'
   activo: { type: Object, default: null },
-  categorias: { type: Array, default: () => [] }
+  categorias: { type: Array, default: () => [] },
+  encargados: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['close', 'saved'])
+
+const categoriasOptions = computed(() =>
+  props.categorias.map(c => ({ value: c.id, label: `${c.icono ?? ''} ${c.nombre}`.trim() }))
+)
+const encargadosOptions = computed(() =>
+  props.encargados.map(e => ({ value: e.id, label: `${e.nombre} — ${e.rol}` }))
+)
 
 const loading = ref(false)
 const error = ref('')
@@ -228,8 +219,7 @@ const form = ref({
   categoriaId: '',
   observaciones: '',
   ubicacionActual: '',
-  nombreEncargado: '',
-  rolEncargado: '',
+  encargadoId: '',
   estado: 'Activo'
 })
 
@@ -245,8 +235,7 @@ watch(() => props.activo, (activo) => {
       categoriaId: activo.categoriaId,
       observaciones: activo.observaciones || '',
       ubicacionActual: activo.ubicacionActual,
-      nombreEncargado: activo.encargadoActual,
-      rolEncargado: '',
+      encargadoId: activo.encargadoActualId || '',
       estado: activo.estado
     }
   }
@@ -267,8 +256,7 @@ async function handleSubmit() {
         categoriaId: Number(form.value.categoriaId),
         observaciones: form.value.observaciones || null,
         ubicacionActual: form.value.ubicacionActual,
-        nombreEncargado: form.value.nombreEncargado,
-        rolEncargado: form.value.rolEncargado
+        encargadoId: form.value.encargadoId
       })
     } else {
       await activoService.editar(form.value.placa, {
@@ -279,8 +267,7 @@ async function handleSubmit() {
         categoriaId: Number(form.value.categoriaId),
         observaciones: form.value.observaciones || null,
         ubicacionActual: form.value.ubicacionActual,
-        nombreEncargado: form.value.nombreEncargado,
-        rolEncargado: form.value.rolEncargado,
+        encargadoId: form.value.encargadoId,
         estado: form.value.estado
       })
     }

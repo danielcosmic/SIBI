@@ -8,7 +8,6 @@ public record EditarActivoRequest(
     int CategoriaId,
     string? Observaciones,
     string UbicacionActual,
-    string NombreEncargado,
-    string RolEncargado,
+    Guid EncargadoId,
     string Estado
 );

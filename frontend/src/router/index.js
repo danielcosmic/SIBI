@@ -34,6 +34,12 @@ const routes = [
         component: () => import('@/views/InventarioView.vue')
       },
       {
+        path: 'encargados',
+        name: 'Encargados',
+        component: () => import('@/views/EncargadosView.vue'),
+        meta: { requiresGTIorAdmin: true }
+      },
+      {
         path: 'historial',
         name: 'Historial',
         component: () => import('@/views/HistorialView.vue')
@@ -83,6 +89,10 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresAdmin && !auth.esAdministradora) {
+    return { name: 'Dashboard' }
+  }
+
+  if (to.meta.requiresGTIorAdmin && !auth.esGTI) {
     return { name: 'Dashboard' }
   }
 })
