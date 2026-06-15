@@ -17,5 +17,8 @@ export default {
     api.put(`/activo/${placa}`, data),
 
   eliminar: (placa) =>
-    api.delete(`/activo/${placa}`)
+    api.delete(`/activo/${placa}`),
+
+  recientes: (categoriaId, tamano = 5) =>
+    api.get('/activo/recientes', { params: { categoriaId, tamano } })
 }

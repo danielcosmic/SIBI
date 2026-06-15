@@ -76,6 +76,7 @@ public class ActivoController : ControllerBase
             .ToListAsync();
 
         var porCategoria = categorias.Select(c => new CategoriaStatDto(
+            c.Id,
             c.Nombre,
             c.Icono,
             conteosPorCategoria.FirstOrDefault(x => x.CategoriaId == c.Id)?.Cantidad ?? 0
@@ -234,6 +235,36 @@ public class ActivoController : ControllerBase
         _db.Activos.Remove(activo);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpGet("recientes")]
+    public async Task<IActionResult> Recientes([FromQuery] int categoriaId, [FromQuery] int tamano = 5)
+    {
+        var placasRecientes = await _db.Historial
+            .Where(h => h.TipoAccion == "Creacion")
+            .Join(_db.Activos.Where(a => a.CategoriaId == categoriaId),
+                  h => h.ActivoPlaca,
+                  a => a.Placa,
+                  (h, a) => new { h.ActivoPlaca, h.FechaHora })
+            .OrderByDescending(x => x.FechaHora)
+            .Take(tamano)
+            .Select(x => x.ActivoPlaca)
+            .ToListAsync();
+
+        var activos = await _db.Activos
+            .Include(a => a.Categoria)
+            .Include(a => a.PlacaNavigation)
+            .Include(a => a.UbicacionNavigation).ThenInclude(u => u.EncargadoActual)
+            .Include(a => a.UbicacionNavigation).ThenInclude(u => u.EncargadoAnterior)
+            .Where(a => placasRecientes.Contains(a.Placa))
+            .ToListAsync();
+
+        var ordenados = placasRecientes
+            .Select(p => activos.First(a => a.Placa == p))
+            .Select(MapToDto)
+            .ToList();
+
+        return Ok(ordenados);
     }
 
     internal static ActivoDto MapToDto(Activo a) => new(

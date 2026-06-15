@@ -7,4 +7,4 @@ public record ActivoStatsDto(
     IEnumerable<CategoriaStatDto> PorCategoria
 );
 
-public record CategoriaStatDto(string Nombre, string? Icono, int Cantidad);
+public record CategoriaStatDto(int Id, string Nombre, string? Icono, int Cantidad);

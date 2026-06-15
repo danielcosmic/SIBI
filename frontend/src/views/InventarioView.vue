@@ -62,8 +62,8 @@
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Marca / Modelo</th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Categoría</th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ubicación</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Encargado</th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -76,7 +76,8 @@
             <tr
               v-for="activo in activos"
               :key="activo.placa"
-              class="hover:bg-blue-50/20 transition-all duration-200"
+              @click="abrirModal('view', activo)"
+              class="hover:bg-blue-50/30 transition-all duration-200 cursor-pointer"
             >
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex flex-col">
@@ -93,24 +94,12 @@
               </td>
               <td class="px-6 py-4 text-gray-900">{{ activo.categoriaNombre }}</td>
               <td class="px-6 py-4 text-sm text-gray-900">{{ activo.ubicacionActual }}</td>
+              <td class="px-6 py-4 text-sm text-gray-900">{{ activo.encargadoActual }}</td>
               <td class="px-6 py-4">
                 <span
                   class="px-3 py-1 rounded-full text-xs font-medium"
                   :class="estadoClase(activo.estado)"
                 >{{ activo.estado }}</span>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <button @click="abrirModal('view', activo)" class="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Ver">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                  </button>
-                  <button v-if="auth.esGTI" @click="abrirModal('edit', activo)" class="p-2 text-green-600 hover:bg-green-50 rounded transition" title="Editar">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                  </button>
-                  <button v-if="auth.esAdministradora" @click="confirmarEliminar(activo)" class="p-2 text-red-600 hover:bg-red-50 rounded transition" title="Eliminar">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
-                </div>
               </td>
             </tr>
           </tbody>
@@ -141,6 +130,9 @@
       :encargados="encargados"
       @close="modalOpen = false"
       @saved="onSaved"
+      @edit="modalMode = 'edit'"
+      @cancelEdit="modalMode = 'view'"
+      @enviarDesecho="confirmarDesecho"
     />
   </div>
 </template>
@@ -204,21 +196,32 @@ function abrirModal(mode, activo) {
   modalOpen.value = true
 }
 
-async function confirmarEliminar(activo) {
+async function confirmarDesecho(activo) {
   const ok = await dialog.confirm({
-    title: 'Eliminar Activo',
-    message: `¿Eliminar el activo ${activo.placa}? Solo es posible si lleva más de 1 año en estado Desecho.`,
-    confirmText: 'Eliminar',
+    title: 'Enviar a Desecho',
+    message: `¿Está seguro de que desea enviar el activo ${activo.placa} a desecho?\n\nEl activo quedará en estado "Desecho" y transcurridos 365 días naturales se habilitará su eliminación permanente del sistema.`,
+    confirmText: 'Enviar a Desecho',
     type: 'danger'
   })
   if (!ok) return
   try {
-    await activoService.eliminar(activo.placa)
+    await activoService.editar(activo.placa, {
+      marca: activo.marca,
+      modelo: activo.modelo,
+      numSerial: activo.numSerial,
+      articulo: activo.articulo,
+      categoriaId: activo.categoriaId,
+      observaciones: activo.observaciones || null,
+      ubicacionActual: activo.ubicacionActual,
+      encargadoId: activo.encargadoActualId,
+      estado: 'Desecho'
+    })
+    modalOpen.value = false
     await cargarActivos()
   } catch (e) {
     await dialog.alert({
-      title: 'No se pudo eliminar',
-      message: e.response?.data?.mensaje || 'No se pudo eliminar el activo.',
+      title: 'No se pudo actualizar',
+      message: e.response?.data?.mensaje || 'No se pudo enviar el activo a desecho.',
       type: 'danger'
     })
   }
