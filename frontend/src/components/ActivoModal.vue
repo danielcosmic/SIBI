@@ -151,72 +151,108 @@
 
       <!-- ── MODO CREATE / EDIT: formulario ── -->
       <template v-else>
-        <form @submit.prevent="handleSubmit" class="overflow-y-auto flex-1 p-6 space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Placa <span class="text-red-500">*</span></label>
-              <input v-model="form.placa" type="text" maxlength="8" :disabled="mode !== 'create'" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100"
-                placeholder="UCR12345" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Placa <span class="text-red-500">*</span></label>
-              <select v-model="form.tipoPlaca" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none">
-                <option value="Institucional">Institucional</option>
-                <option value="Interno">Interno</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Marca <span class="text-red-500">*</span></label>
-              <input v-model="form.marca" type="text" maxlength="30" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Modelo <span class="text-red-500">*</span></label>
-              <input v-model="form.modelo" type="text" maxlength="20" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Número Serial <span class="text-red-500">*</span></label>
-              <input v-model="form.numSerial" type="text" maxlength="30" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Artículo <span class="text-red-500">*</span></label>
-              <input v-model="form.articulo" type="text" maxlength="20" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Categoría <span class="text-red-500">*</span></label>
-              <SearchableSelect v-model="form.categoriaId" :options="categoriasOptions" placeholder="Buscar categoría..." />
-            </div>
-            <div v-if="mode !== 'create'">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select v-model="form.estado"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none">
-                <option value="Activo">Activo</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Desecho">Desecho</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación Actual <span class="text-red-500">*</span></label>
-              <input v-model="form.ubicacionActual" type="text" maxlength="30" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Encargado <span class="text-red-500">*</span></label>
-              <SearchableSelect v-model="form.encargadoId" :options="encargadosOptions" placeholder="Buscar encargado..." />
-            </div>
-          </div>
+        <div class="overflow-y-auto flex-1 p-6 space-y-6">
+
+          <!-- Identificación -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-            <textarea v-model="form.observaciones" maxlength="200" rows="2"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none resize-none" />
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Identificación</p>
+            <div class="bg-gray-50/70 rounded-xl p-4 space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Placa <span class="text-red-500">*</span></label>
+                  <input v-model="form.placa" type="text" maxlength="8" :disabled="mode !== 'create'" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500 font-mono"
+                    placeholder="UCR12345" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de Placa <span class="text-red-500">*</span></label>
+                  <select v-model="form.tipoPlaca" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white">
+                    <option value="Institucional">Institucional</option>
+                    <option value="Interno">Interno</option>
+                  </select>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Artículo <span class="text-red-500">*</span></label>
+                  <input v-model="form.articulo" type="text" maxlength="20" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Número Serial <span class="text-red-500">*</span></label>
+                  <input v-model="form.numSerial" type="text" maxlength="30" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white font-mono" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Marca <span class="text-red-500">*</span></label>
+                  <input v-model="form.marca" type="text" maxlength="30" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Modelo <span class="text-red-500">*</span></label>
+                  <input v-model="form.modelo" type="text" maxlength="20" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                </div>
+              </div>
+            </div>
           </div>
-          <p v-if="error" class="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{{ error }}</p>
-        </form>
+
+          <!-- Clasificación -->
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Clasificación</p>
+            <div class="bg-gray-50/70 rounded-xl p-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Categoría <span class="text-red-500">*</span></label>
+                  <SearchableSelect v-model="form.categoriaId" :options="categoriasOptions" placeholder="Buscar categoría..." />
+                </div>
+                <div v-if="mode !== 'create'">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
+                  <select v-model="form.estado"
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white">
+                    <option value="Activo">Activo</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                    <option value="Desecho">Desecho</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ubicación y Responsable -->
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Ubicación y Responsable</p>
+            <div class="bg-gray-50/70 rounded-xl p-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Ubicación Actual <span class="text-red-500">*</span></label>
+                  <input v-model="form.ubicacionActual" type="text" maxlength="30" required
+                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Encargado <span class="text-red-500">*</span></label>
+                  <SearchableSelect v-model="form.encargadoId" :options="encargadosOptions" placeholder="Buscar encargado..." />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Observaciones</p>
+            <div class="bg-gray-50/70 rounded-xl p-4">
+              <textarea v-model="form.observaciones" maxlength="200" rows="3"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none resize-none bg-white"
+                placeholder="Notas adicionales sobre el activo..." />
+              <p class="text-xs text-gray-400 mt-1 text-right">{{ (form.observaciones || '').length }}/200</p>
+            </div>
+          </div>
+
+          <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">{{ error }}</p>
+        </div>
 
         <!-- Footer create/edit -->
         <div class="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
@@ -225,7 +261,11 @@
             Cancelar
           </button>
           <button @click="handleSubmit" :disabled="loading"
-            class="flex-1 px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium disabled:bg-gray-400">
+            class="flex-1 px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium disabled:bg-gray-400 flex items-center justify-center gap-2">
+            <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
             {{ loading ? 'Guardando...' : mode === 'create' ? 'Crear Activo' : 'Guardar Cambios' }}
           </button>
         </div>
