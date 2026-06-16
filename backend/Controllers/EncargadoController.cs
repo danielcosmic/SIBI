@@ -28,7 +28,11 @@ public class EncargadoController : ControllerBase
     {
         var encargados = await _db.Encargados
             .OrderBy(e => e.Nombre)
-            .Select(e => new EncargadoDto(e.Id, e.Nombre, e.Rol))
+            .Select(e => new EncargadoDto(
+                e.Id,
+                e.Nombre,
+                e.Rol,
+                _db.Activos.Count(a => a.UbicacionNavigation.EncargadoActualId == e.Id)))
             .ToListAsync();
         return Ok(encargados);
     }
@@ -37,10 +41,13 @@ public class EncargadoController : ControllerBase
     [Authorize(Roles = "GTI,Administradora")]
     public async Task<IActionResult> Crear([FromBody] CrearEncargadoRequest request)
     {
+        if (await _db.Encargados.AnyAsync(e => e.Nombre == request.Nombre && e.Rol == request.Rol))
+            return Conflict(new { mensaje = "Ya existe un encargado con ese nombre y rol." });
+
         var encargado = new Encargado { Nombre = request.Nombre, Rol = request.Rol };
         _db.Encargados.Add(encargado);
         await _db.SaveChangesAsync();
-        return CreatedAtAction(nameof(Listar), new EncargadoDto(encargado.Id, encargado.Nombre, encargado.Rol));
+        return CreatedAtAction(nameof(Listar), new EncargadoDto(encargado.Id, encargado.Nombre, encargado.Rol, 0));
     }
 
     [HttpPut("{id:guid}")]
@@ -49,6 +56,9 @@ public class EncargadoController : ControllerBase
     {
         var encargado = await _db.Encargados.FindAsync(id);
         if (encargado is null) return NotFound();
+
+        if (await _db.Encargados.AnyAsync(e => e.Nombre == request.Nombre && e.Rol == request.Rol && e.Id != id))
+            return Conflict(new { mensaje = "Ya existe un encargado con ese nombre y rol." });
 
         encargado.Nombre = request.Nombre;
         encargado.Rol = request.Rol;

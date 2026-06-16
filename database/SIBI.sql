@@ -49,9 +49,9 @@ CREATE TABLE Encargado (
 -- 5. Tabla Categoria
 --    Categorías de activos administradas por la Administradora.
 CREATE TABLE Categoria (
-    Id     INT          IDENTITY(1,1) NOT NULL,
-    Nombre VARCHAR(30)  NOT NULL,
-    Icono  VARCHAR(30)  NULL,
+    Id     INT           IDENTITY(1,1) NOT NULL,
+    Nombre NVARCHAR(30)  NOT NULL,
+    Icono  NVARCHAR(30)  NULL,
 
     CONSTRAINT PK_Categoria      PRIMARY KEY (Id),
     CONSTRAINT UQ_Categoria_Nombre UNIQUE (Nombre)

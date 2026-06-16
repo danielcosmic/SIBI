@@ -17,127 +17,149 @@
       </button>
     </div>
 
-    <!-- Tabla -->
-    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-blue-100/50">
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gradient-to-r from-blue-50/50 to-blue-100/30 border-b border-blue-100/50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nombre</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Rol</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-if="loading">
-              <td colspan="2" class="px-6 py-10 text-center text-gray-400">Cargando...</td>
-            </tr>
-            <tr v-else-if="encargados.length === 0">
-              <td colspan="2" class="px-6 py-10 text-center text-gray-400">No hay encargados registrados.</td>
-            </tr>
-            <template v-else v-for="e in encargados" :key="e.id">
-              <!-- Fila principal -->
-              <tr
-                @click="seleccionarEncargado(e)"
-                class="transition-all duration-200 cursor-pointer"
-                :class="encargadoSeleccionado?.id === e.id ? 'bg-blue-50/60' : 'hover:bg-blue-50/20'"
-              >
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-[#003d7a] to-[#0066cc] rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <span class="font-medium text-gray-900">{{ e.nombre }}</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center justify-between">
-                    <span class="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-xs font-medium">{{ e.rol }}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                      class="w-4 h-4 text-gray-400 transition-transform duration-200 mr-2"
-                      :class="encargadoSeleccionado?.id === e.id ? 'rotate-180 text-[#0066cc]' : ''"
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </td>
-              </tr>
+    <!-- Buscador -->
+    <div class="flex items-center gap-3">
+      <div class="relative max-w-xs w-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          v-model="busqueda"
+          type="text"
+          placeholder="Buscar encargado..."
+          class="w-full pl-9 pr-3 py-2 text-sm bg-white/80 border border-blue-200/70 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0066cc]/15 focus:border-[#0066cc]/40 transition-all"
+        />
+      </div>
+      <span v-if="busqueda" class="text-sm text-gray-400">{{ encargadosFiltrados.length }} resultado{{ encargadosFiltrados.length !== 1 ? 's' : '' }}</span>
+    </div>
 
-              <!-- Panel expandible de activos -->
-              <tr v-if="encargadoSeleccionado?.id === e.id">
-                <td colspan="2" class="px-6 pb-5 pt-1 bg-blue-50/30">
-                  <div class="rounded-xl border border-blue-100 bg-white overflow-hidden">
-                    <!-- Cabecera del panel -->
-                    <div class="flex items-center justify-between px-4 py-3 border-b border-blue-100 bg-blue-50/40">
-                      <p class="text-sm font-semibold text-[#003d7a]">
-                        Activos asignados
-                        <span v-if="!cargandoActivos" class="ml-1 text-gray-500 font-normal">({{ activosDelEncargado.length }})</span>
-                      </p>
-                      <div class="flex items-center gap-2">
-                        <button
-                          v-if="auth.esAdministradora"
-                          @click.stop="eliminar(e)"
-                          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Eliminar encargado
-                        </button>
-                        <button
-                          v-if="auth.esGTI"
-                          @click.stop="abrirModalEditar(e)"
-                          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#003d7a] hover:bg-[#002d5a] rounded-lg transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          Editar encargado
-                        </button>
-                      </div>
-                    </div>
+    <!-- Grid de tarjetas -->
+    <div v-if="loading" class="text-center py-12 text-gray-400">Cargando...</div>
+    <div v-else-if="encargados.length === 0" class="bg-white/90 rounded-2xl shadow-lg p-12 text-center text-gray-400 border border-blue-100/50">
+      No hay encargados registrados.
+    </div>
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        v-for="e in encargadosFiltrados"
+        :key="e.id"
+        @click="seleccionarEncargado(e)"
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg p-5 border cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+        :class="encargadoSeleccionado?.id === e.id
+          ? 'border-[#0066cc] ring-2 ring-[#0066cc]/20 shadow-blue-100'
+          : 'border-blue-100/50 hover:border-blue-200'"
+      >
+        <div class="flex items-start gap-4">
+          <!-- Avatar con iniciales -->
+          <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm shadow-md"
+            :class="encargadoSeleccionado?.id === e.id ? 'bg-gradient-to-br from-[#0066cc] to-[#003d7a]' : 'bg-gradient-to-br from-[#4da6ff] to-[#003d7a]'">
+            {{ iniciales(e.nombre) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-gray-900 truncate">{{ e.nombre }}</p>
+            <span class="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">{{ e.rol }}</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 flex-shrink-0 mt-1 transition-transform duration-200"
+            :class="encargadoSeleccionado?.id === e.id ? 'rotate-180 text-[#0066cc]' : 'text-gray-300'"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
 
-                    <!-- Lista de activos -->
-                    <div v-if="cargandoActivos" class="py-6 text-center text-sm text-gray-400">Cargando activos...</div>
-                    <div v-else-if="activosDelEncargado.length === 0" class="py-6 text-center text-sm text-gray-400">Este encargado no tiene activos asignados.</div>
-                    <table v-else class="w-full text-sm">
-                      <thead class="bg-gray-50/80">
-                        <tr>
-                          <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Placa</th>
-                          <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Artículo</th>
-                          <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Marca / Modelo</th>
-                          <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Ubicación</th>
-                          <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-gray-100">
-                        <tr v-for="activo in activosDelEncargado" :key="activo.placa" class="hover:bg-blue-50/20 transition">
-                          <td class="px-4 py-3 font-mono text-[#003d7a] font-medium">{{ activo.placa }}</td>
-                          <td class="px-4 py-3 text-gray-800">{{ activo.articulo }}</td>
-                          <td class="px-4 py-3 text-gray-600">{{ activo.marca }} {{ activo.modelo }}</td>
-                          <td class="px-4 py-3 text-gray-600">{{ activo.ubicacionActual }}</td>
-                          <td class="px-4 py-3">
-                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
-                              :class="{
-                                'bg-green-100 text-green-700': activo.estado === 'Activo',
-                                'bg-yellow-100 text-yellow-700': activo.estado === 'Mantenimiento',
-                                'bg-red-100 text-red-700': activo.estado === 'Desecho'
-                              }">
-                              {{ activo.estado }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
+        <!-- Estadística de activos -->
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-sm text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <span>Activos asignados</span>
+          </div>
+          <span class="text-lg font-bold" :class="e.totalActivos > 0 ? 'text-[#003d7a]' : 'text-gray-300'">
+            {{ e.totalActivos }}
+          </span>
+        </div>
       </div>
     </div>
+
+    <!-- Panel expandible de activos (debajo del grid) -->
+    <Transition name="panel-slide">
+      <div v-if="encargadoSeleccionado" class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-blue-100/50">
+        <!-- Cabecera del panel -->
+        <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] text-white px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
+              {{ iniciales(encargadoSeleccionado.nombre) }}
+            </div>
+            <div>
+              <p class="font-bold">{{ encargadoSeleccionado.nombre }}</p>
+              <p class="text-blue-200 text-sm">{{ encargadoSeleccionado.rol }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="auth.esAdministradora"
+              @click.stop="eliminar(encargadoSeleccionado)"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 rounded-lg transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Eliminar
+            </button>
+            <button
+              v-if="auth.esGTI"
+              @click.stop="abrirModalEditar(encargadoSeleccionado)"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white/15 hover:bg-white/25 rounded-lg transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Editar
+            </button>
+            <button @click="encargadoSeleccionado = null" class="p-1.5 hover:bg-white/10 rounded-lg transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de activos -->
+        <div v-if="cargandoActivos" class="py-10 text-center text-gray-400 text-sm">Cargando activos...</div>
+        <div v-else-if="activosDelEncargado.length === 0" class="py-10 text-center text-gray-400 text-sm">Este encargado no tiene activos asignados.</div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gradient-to-r from-blue-50/50 to-blue-100/30 border-b border-blue-100/50">
+              <tr>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Placa</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Artículo</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Marca / Modelo</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Ubicación</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="activo in activosDelEncargado" :key="activo.placa" class="hover:bg-blue-50/20 transition">
+                <td class="px-6 py-3 font-mono text-[#003d7a] font-medium">{{ activo.placa }}</td>
+                <td class="px-6 py-3 text-gray-800">{{ activo.articulo }}</td>
+                <td class="px-6 py-3 text-gray-600">{{ activo.marca }} {{ activo.modelo }}</td>
+                <td class="px-6 py-3 text-gray-600">{{ activo.ubicacionActual }}</td>
+                <td class="px-6 py-3">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                    :class="{
+                      'bg-green-100 text-green-700': activo.estado === 'Activo',
+                      'bg-yellow-100 text-yellow-700': activo.estado === 'Mantenimiento',
+                      'bg-red-100 text-red-700': activo.estado === 'Desecho'
+                    }">
+                    {{ activo.estado }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Modal Crear -->
     <Teleport to="body">
@@ -346,6 +368,14 @@ const auth = useAuthStore()
 const dialog = useDialog()
 
 const encargados = ref([])
+const busqueda = ref('')
+const encargadosFiltrados = computed(() => {
+  const q = busqueda.value.trim().toLowerCase()
+  if (!q) return encargados.value
+  return encargados.value.filter(e =>
+    e.nombre.toLowerCase().includes(q) || e.rol.toLowerCase().includes(q)
+  )
+})
 const loading = ref(false)
 
 const encargadoSeleccionado = ref(null)
@@ -512,6 +542,10 @@ async function aplicarReasignar() {
   }
 }
 
+function iniciales(nombre) {
+  return nombre.split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('')
+}
+
 async function eliminar(e) {
   const ok = await dialog.confirm({
     title: 'Eliminar Encargado',
@@ -533,3 +567,10 @@ async function eliminar(e) {
   }
 }
 </script>
+
+<style scoped>
+.panel-slide-enter-active { animation: slideDown 0.25s cubic-bezier(0.4,0,0.2,1); }
+.panel-slide-leave-active { animation: slideUp 0.2s cubic-bezier(0.4,0,0.2,1); }
+@keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideUp   { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(-10px); } }
+</style>

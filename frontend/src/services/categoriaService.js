@@ -7,6 +7,9 @@ export default {
   crear: (data) =>
     api.post('/categoria', data),
 
+  editar: (id, data) =>
+    api.put(`/categoria/${id}`, data),
+
   eliminar: (id) =>
     api.delete(`/categoria/${id}`)
 }

@@ -46,16 +46,80 @@
       <!-- Top Bar -->
       <div class="bg-white/80 backdrop-blur-md border-b border-gray-200/50 px-8 py-4 shadow-sm relative z-10">
         <div class="flex items-center justify-between">
-          <div class="flex-1 max-w-xl">
+          <div class="flex-1 max-w-xl" ref="searchWrapper">
             <div class="relative">
-              <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+              <svg v-if="cargandoBusqueda" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
               <input
+                v-model="busquedaGlobal"
+                @input="onBusquedaInput"
+                @focus="mostrarDropdown = resultados.length > 0"
+                @keydown.escape="cerrarBusqueda"
                 type="text"
                 placeholder="Buscar activos, placas, ubicaciones..."
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none"
+                class="w-full pl-10 pr-4 py-2 rounded-lg outline-none transition-all duration-200
+                       border border-blue-200/80 shadow-sm
+                       focus:border-[#0066cc]/50 focus:ring-2 focus:ring-[#0066cc]/15 focus:shadow-[0_0_0_3px_rgba(0,102,204,0.08)]"
+                autocomplete="off"
               />
+
+              <!-- Dropdown de resultados -->
+              <Transition
+                enter-active-class="transition ease-out duration-150"
+                enter-from-class="opacity-0 translate-y-1"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition ease-in duration-100"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 translate-y-1"
+              >
+                <div
+                  v-if="mostrarDropdown"
+                  class="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-xl border border-blue-100/80 overflow-hidden z-50"
+                >
+                  <!-- Sin resultados -->
+                  <div v-if="resultados.length === 0 && !cargandoBusqueda" class="px-4 py-6 text-center text-sm text-gray-400">
+                    No se encontraron activos para "{{ busquedaGlobal }}"
+                  </div>
+
+                  <!-- Lista de resultados -->
+                  <div v-else class="divide-y divide-gray-50">
+                    <button
+                      v-for="a in resultados"
+                      :key="a.placa"
+                      @click="irAActivo(a)"
+                      class="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50/60 transition-colors text-left group"
+                    >
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-semibold text-gray-900 text-sm">{{ a.placa }}</span>
+                          <span class="text-gray-300 text-xs">·</span>
+                          <span class="text-sm text-gray-700 truncate">{{ a.articulo }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                          <span class="text-xs text-gray-400 truncate">{{ a.marca }} {{ a.modelo }}</span>
+                          <span v-if="a.encargadoActual" class="text-gray-300 text-xs">·</span>
+                          <span v-if="a.encargadoActual" class="text-xs text-gray-400 truncate">{{ a.encargadoActual }}</span>
+                        </div>
+                      </div>
+                      <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium" :class="estadoBadge(a.estado)">
+                        {{ a.estado }}
+                      </span>
+                    </button>
+                  </div>
+
+                  <!-- Pie: ver todos -->
+                  <div v-if="resultados.length > 0" class="border-t border-gray-100 px-4 py-2.5 bg-gray-50/60">
+                    <button @click="irAInventario" class="text-xs text-[#0066cc] hover:underline font-medium">
+                      Ver todos los resultados en Inventario →
+                    </button>
+                  </div>
+                </div>
+              </Transition>
             </div>
           </div>
 
@@ -178,17 +242,83 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppDialog from '@/components/AppDialog.vue'
 import sibiLogo from '@/assets/SIBI_logo_4096_fondo_oscuro.png'
+import activoService from '@/services/activoService'
 
 const auth = useAuthStore()
 const router = useRouter()
 const perfilAbierto = ref(false)
 const perfilBtn = ref(null)
 const dropdownStyle = ref({})
+
+// ── Búsqueda global ──────────────────────────────────────────────────────────
+const searchWrapper = ref(null)
+const busquedaGlobal = ref('')
+const resultados = ref([])
+const mostrarDropdown = ref(false)
+const cargandoBusqueda = ref(false)
+let debounceTimer = null
+
+function onBusquedaInput() {
+  clearTimeout(debounceTimer)
+  const q = busquedaGlobal.value.trim()
+  if (!q) {
+    resultados.value = []
+    mostrarDropdown.value = false
+    return
+  }
+  debounceTimer = setTimeout(() => buscar(q), 300)
+}
+
+async function buscar(q) {
+  cargandoBusqueda.value = true
+  mostrarDropdown.value = true
+  try {
+    const { data } = await activoService.listar({ busqueda: q, tamano: 6 })
+    resultados.value = data.items
+  } catch {
+    resultados.value = []
+  } finally {
+    cargandoBusqueda.value = false
+  }
+}
+
+function irAActivo(activo) {
+  cerrarBusqueda()
+  router.push({ path: '/inventario', query: { busqueda: activo.placa } })
+}
+
+function irAInventario() {
+  const q = busquedaGlobal.value.trim()
+  cerrarBusqueda()
+  router.push({ path: '/inventario', query: { busqueda: q } })
+}
+
+function cerrarBusqueda() {
+  mostrarDropdown.value = false
+  busquedaGlobal.value = ''
+  resultados.value = []
+}
+
+function onClickFuera(e) {
+  if (searchWrapper.value && !searchWrapper.value.contains(e.target)) {
+    mostrarDropdown.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickFuera))
+onBeforeUnmount(() => document.removeEventListener('mousedown', onClickFuera))
+
+const estadosBadge = {
+  Activo: 'bg-green-100 text-green-700',
+  Mantenimiento: 'bg-yellow-100 text-yellow-700',
+  Desecho: 'bg-red-100 text-red-700'
+}
+function estadoBadge(e) { return estadosBadge[e] || 'bg-gray-100 text-gray-600' }
 
 function togglePerfil() {
   if (!perfilAbierto.value) {

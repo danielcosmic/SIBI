@@ -139,6 +139,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDialog } from '@/composables/useDialog'
 import activoService from '@/services/activoService'
@@ -146,6 +147,7 @@ import categoriaService from '@/services/categoriaService'
 import encargadoService from '@/services/encargadoService'
 import ActivoModal from '@/components/ActivoModal.vue'
 
+const route = useRoute()
 const auth = useAuthStore()
 const dialog = useDialog()
 
@@ -181,6 +183,7 @@ async function cargarActivos() {
 }
 
 onMounted(async () => {
+  if (route.query.busqueda) busqueda.value = route.query.busqueda
   const [catRes, encRes] = await Promise.all([categoriaService.listar(), encargadoService.listar()])
   categorias.value = catRes.data
   encargados.value = encRes.data

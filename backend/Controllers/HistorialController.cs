@@ -17,7 +17,7 @@ public class HistorialController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> Listar(
-        [FromQuery] string? usuarioCorreo,
+        [FromQuery] string? usuarioNombre,
         [FromQuery] string? activoPlaca,
         [FromQuery] string? tipoAccion,
         [FromQuery] DateTime? desde,
@@ -29,8 +29,8 @@ public class HistorialController : ControllerBase
             .Include(h => h.Usuario)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(usuarioCorreo))
-            query = query.Where(h => h.UsuarioCorreo == usuarioCorreo);
+        if (!string.IsNullOrWhiteSpace(usuarioNombre))
+            query = query.Where(h => h.Usuario.Nombre.Contains(usuarioNombre));
 
         if (!string.IsNullOrWhiteSpace(activoPlaca))
             query = query.Where(h => h.ActivoPlaca == activoPlaca);

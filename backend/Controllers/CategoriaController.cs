@@ -38,6 +38,22 @@ public class CategoriaController : ControllerBase
         return CreatedAtAction(nameof(Listar), new CategoriaDto(categoria.Id, categoria.Nombre, categoria.Icono));
     }
 
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administradora")]
+    public async Task<IActionResult> Editar(int id, [FromBody] CrearCategoriaRequest request)
+    {
+        var categoria = await _db.Categorias.FindAsync(id);
+        if (categoria is null) return NotFound(new { mensaje = "Categoría no encontrada." });
+
+        if (await _db.Categorias.AnyAsync(c => c.Nombre == request.Nombre && c.Id != id))
+            return Conflict(new { mensaje = "Ya existe una categoría con ese nombre." });
+
+        categoria.Nombre = request.Nombre;
+        categoria.Icono = request.Icono;
+        await _db.SaveChangesAsync();
+        return Ok(new CategoriaDto(categoria.Id, categoria.Nombre, categoria.Icono));
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Administradora")]
     public async Task<IActionResult> Eliminar(int id)

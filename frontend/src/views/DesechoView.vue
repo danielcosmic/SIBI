@@ -32,12 +32,28 @@
       </div>
     </div>
 
+    <!-- Buscador -->
+    <div class="flex items-center gap-3">
+      <div class="relative max-w-xs w-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          v-model="busqueda"
+          type="text"
+          placeholder="Buscar por artículo, placa..."
+          class="w-full pl-9 pr-3 py-2 text-sm bg-white/80 border border-red-200/70 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400/15 focus:border-red-400/40 transition-all"
+        />
+      </div>
+      <span v-if="busqueda" class="text-sm text-gray-400">{{ itemsFiltrados.length }} resultado{{ itemsFiltrados.length !== 1 ? 's' : '' }}</span>
+    </div>
+
     <!-- Lista de activos en desecho -->
     <div v-if="loading" class="text-center py-10 text-gray-400">Cargando...</div>
     <div v-else-if="items.length === 0" class="text-center py-10 text-gray-400 bg-white rounded-2xl shadow">No hay activos en estado de desecho.</div>
     <div v-else class="space-y-4">
       <div
-        v-for="item in items"
+        v-for="item in itemsFiltrados"
         :key="item.activo.placa"
         class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-red-100/50 bg-gradient-to-r from-red-50/30 to-white"
       >
@@ -109,7 +125,7 @@
               @click="rechazar(item.activo.placa)"
               class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium"
             >
-              Rechazar
+              Recuperar
             </button>
           </div>
         </div>
@@ -153,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useDialog } from '@/composables/useDialog'
 import desechoService from '@/services/desechoService'
@@ -161,6 +177,21 @@ import desechoService from '@/services/desechoService'
 const auth = useAuthStore()
 const dialog = useDialog()
 const items = ref([])
+const busqueda = ref('')
+const itemsFiltrados = computed(() => {
+  const q = busqueda.value.trim().toLowerCase()
+  if (!q) return items.value
+  return items.value.filter(i => {
+    const a = i.activo
+    return (
+      a.articulo?.toLowerCase().includes(q) ||
+      a.placa?.toLowerCase().includes(q) ||
+      a.marca?.toLowerCase().includes(q) ||
+      a.modelo?.toLowerCase().includes(q) ||
+      a.encargadoActual?.toLowerCase().includes(q)
+    )
+  })
+})
 const loading = ref(false)
 const itemSeleccionado = ref(null)
 const actionLoading = ref(false)
@@ -194,9 +225,9 @@ async function confirmarEliminar() {
 
 async function rechazar(placa) {
   const ok = await dialog.confirm({
-    title: 'Rechazar Eliminación',
-    message: '¿Rechazar la eliminación y restaurar este activo a estado Activo?',
-    confirmText: 'Rechazar',
+    title: 'Recuperar Activo',
+    message: '¿Recuperar este activo y restaurarlo a estado Activo?',
+    confirmText: 'Recuperar',
     cancelText: 'Cancelar',
     type: 'warning'
   })

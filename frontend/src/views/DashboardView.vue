@@ -6,11 +6,13 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-blue-100/50 bg-gradient-to-br from-white to-blue-50/50 transition-all duration-300">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Activos -->
+      <div @click="router.push('/inventario')"
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-blue-100/50 bg-gradient-to-br from-white to-blue-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-[#0066cc]/30">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">Total de Activos</p>
+            <p class="text-sm text-gray-500 font-medium">Activos</p>
             <p class="text-3xl font-bold text-[#003d7a] mt-2">{{ stats.totalActivos }}</p>
           </div>
           <div class="w-12 h-12 bg-gradient-to-br from-[#4da6ff] to-[#0066cc] rounded-full flex items-center justify-center shadow-lg">
@@ -19,34 +21,58 @@
             </svg>
           </div>
         </div>
+        <p class="text-xs text-[#0066cc] mt-3 font-medium">Ver inventario →</p>
       </div>
 
-      <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-red-100/50 bg-gradient-to-br from-white to-red-50/50 transition-all duration-300">
+      <!-- Desecho -->
+      <div @click="router.push('/desecho')"
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-red-100/50 bg-gradient-to-br from-white to-red-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-red-300/50">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">En Bodega (Desecho)</p>
+            <p class="text-sm text-gray-500 font-medium">Desecho</p>
             <p class="text-3xl font-bold text-red-600 mt-2">{{ stats.enDesecho }}</p>
           </div>
           <div class="w-12 h-12 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
         </div>
+        <p class="text-xs text-red-500 mt-3 font-medium">Ver desecho →</p>
       </div>
 
-      <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-blue-100/50 bg-gradient-to-br from-white to-blue-50/50 transition-all duration-300">
+      <!-- Categorías -->
+      <div @click="router.push('/categorias')"
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-purple-100/50 bg-gradient-to-br from-white to-purple-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-purple-300/50">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">Categorías Activas</p>
-            <p class="text-3xl font-bold text-[#0066cc] mt-2">{{ stats.porCategoria.length }}</p>
+            <p class="text-sm text-gray-500 font-medium">Categorías</p>
+            <p class="text-3xl font-bold text-purple-700 mt-2">{{ stats.porCategoria.length }}</p>
           </div>
-          <div class="w-12 h-12 bg-gradient-to-br from-[#4da6ff] to-[#0066cc] rounded-full flex items-center justify-center shadow-lg">
+          <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
             </svg>
           </div>
         </div>
+        <p class="text-xs text-purple-500 mt-3 font-medium">Ver categorías →</p>
+      </div>
+
+      <!-- Encargados -->
+      <div @click="router.push('/encargados')"
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-green-100/50 bg-gradient-to-br from-white to-green-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-green-300/50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 font-medium">Encargados</p>
+            <p class="text-3xl font-bold text-green-700 mt-2">{{ totalEncargados }}</p>
+          </div>
+          <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+        </div>
+        <p class="text-xs text-green-600 mt-3 font-medium">Ver encargados →</p>
       </div>
     </div>
 
@@ -63,7 +89,7 @@
             ? 'border-[#0066cc] bg-gradient-to-br from-blue-100 to-blue-50 shadow-md ring-2 ring-[#0066cc]/30'
             : 'border-blue-100/50 from-blue-50/30 to-white'"
         >
-          <p class="text-2xl mb-2">{{ cat.icono || '📦' }}</p>
+          <p class="text-2xl mb-2 emoji-font">{{ cat.icono || defaultEmoji }}</p>
           <p class="font-semibold text-gray-800 text-sm">{{ cat.nombre }}</p>
           <p class="text-2xl font-bold text-[#003d7a]">{{ cat.cantidad }}</p>
         </div>
@@ -81,7 +107,7 @@
         <div v-if="categoriaSeleccionada" class="mt-6 border-t border-blue-100 pt-5">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
-              <span class="text-xl">{{ categoriaSeleccionada.icono || '📦' }}</span>
+              <span class="text-xl emoji-font">{{ categoriaSeleccionada.icono || defaultEmoji }}</span>
               <h4 class="font-semibold text-[#003d7a]">{{ categoriaSeleccionada.nombre }}</h4>
             </div>
             <button @click="categoriaSeleccionada = null" class="text-gray-400 hover:text-gray-600 transition">
@@ -228,10 +254,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import activoService from '@/services/activoService'
 import historialService from '@/services/historialService'
+import encargadoService from '@/services/encargadoService'
 
+const router = useRouter()
+const defaultEmoji = String.fromCodePoint(0x1F4E6)
 const stats = ref({ totalActivos: 0, enDesecho: 0, solicitudesPendientes: 0, porCategoria: [] })
+const totalEncargados = ref(0)
 const actividad = ref([])
 const categoriaSeleccionada = ref(null)
 const activosRecientes = ref([])
@@ -241,12 +272,14 @@ const activoDetalle = ref(null)
 const cargandoDetalle = ref(false)
 
 onMounted(async () => {
-  const [statsRes, histRes] = await Promise.all([
+  const [statsRes, histRes, encRes] = await Promise.all([
     activoService.stats(),
-    historialService.listar({ pagina: 1, tamano: 6 })
+    historialService.listar({ pagina: 1, tamano: 6 }),
+    encargadoService.listar()
   ])
   stats.value = statsRes.data
   actividad.value = histRes.data.items
+  totalEncargados.value = encRes.data.length
 })
 
 async function seleccionarCategoria(cat) {
@@ -303,3 +336,9 @@ function formatFecha(iso) {
   return new Date(iso).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' })
 }
 </script>
+
+<style scoped>
+.emoji-font {
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
+}
+</style>

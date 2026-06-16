@@ -39,8 +39,8 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Usuario (correo)</label>
-          <input v-model="usuarioCorreo" type="text" placeholder="usuario@ucr.ac.cr" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] outline-none" />
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de usuario</label>
+          <input v-model="usuarioNombre" type="text" placeholder="Buscar por nombre..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] outline-none" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
@@ -266,7 +266,7 @@ const total = ref(0)
 const pagina = ref(1)
 const tamano = ref(20)
 const tipoAccion = ref('')
-const usuarioCorreo = ref('')
+const usuarioNombre = ref('')
 const desde = ref('')
 const hasta = ref('')
 const loading = ref(false)
@@ -306,7 +306,7 @@ async function cargar() {
   try {
     const params = { pagina: pagina.value, tamano: tamano.value }
     if (tipoAccion.value) params.tipoAccion = tipoAccion.value
-    if (usuarioCorreo.value) params.usuarioCorreo = usuarioCorreo.value
+    if (usuarioNombre.value) params.usuarioNombre = usuarioNombre.value
     if (desde.value) params.desde = desde.value
     if (hasta.value) params.hasta = hasta.value
     const { data } = await historialService.listar(params)
@@ -319,7 +319,7 @@ async function cargar() {
 
 onMounted(cargar)
 watch([pagina], cargar)
-watch([tipoAccion, usuarioCorreo, desde, hasta], () => { pagina.value = 1; cargar() })
+watch([tipoAccion, usuarioNombre, desde, hasta], () => { pagina.value = 1; cargar() })
 
 const ICONOS = { Creacion: '✨', CambioUbicacion: '📍', CambioEncargado: '👤', CambioEstado: '🔄', CambioPlaca: '🏷️', Eliminacion: '🗑️', Aprobacion: '✅', Rechazo: '❌' }
 const LABELS = { Creacion: 'Creación', CambioUbicacion: 'Cambio de Ubicación', CambioEncargado: 'Cambio de Encargado', CambioEstado: 'Cambio de Estado', CambioPlaca: 'Cambio de Placa', Eliminacion: 'Eliminación', Aprobacion: 'Aprobación', Rechazo: 'Rechazo' }
