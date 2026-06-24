@@ -60,6 +60,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<HistorialService>();
+builder.Services.AddScoped<EmailService>();
 
 var app = builder.Build();
 

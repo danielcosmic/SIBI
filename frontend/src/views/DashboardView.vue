@@ -58,8 +58,8 @@
         <p class="text-xs text-purple-500 mt-3 font-medium">Ver categorías →</p>
       </div>
 
-      <!-- Encargados -->
-      <div @click="router.push('/encargados')"
+      <!-- Encargados (no visible para JefaAdministrativa) -->
+      <div v-if="!auth.esJefaAdministrativa" @click="router.push('/encargados')"
         class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-green-100/50 bg-gradient-to-br from-white to-green-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-green-300/50">
         <div class="flex items-center justify-between">
           <div>
@@ -73,6 +73,23 @@
           </div>
         </div>
         <p class="text-xs text-green-600 mt-3 font-medium">Ver encargados →</p>
+      </div>
+
+      <!-- Cambios Solicitados (solo JefaAdministrativa) -->
+      <div v-else @click="router.push('/mis-solicitudes')"
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-amber-100/50 bg-gradient-to-br from-white to-amber-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-amber-300/50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 font-medium">Cambios Pendientes</p>
+            <p class="text-3xl font-bold text-amber-600 mt-2">{{ totalSolicitudes }}</p>
+          </div>
+          <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </div>
+        </div>
+        <p class="text-xs text-amber-600 mt-3 font-medium">Ver mis solicitudes →</p>
       </div>
     </div>
 
@@ -255,14 +272,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import activoService from '@/services/activoService'
 import historialService from '@/services/historialService'
 import encargadoService from '@/services/encargadoService'
+import solicitudService from '@/services/solicitudService'
 
 const router = useRouter()
+const auth = useAuthStore()
 const defaultEmoji = String.fromCodePoint(0x1F4E6)
 const stats = ref({ totalActivos: 0, enDesecho: 0, solicitudesPendientes: 0, porCategoria: [] })
 const totalEncargados = ref(0)
+const totalSolicitudes = ref(0)
 const actividad = ref([])
 const categoriaSeleccionada = ref(null)
 const activosRecientes = ref([])
@@ -272,14 +293,25 @@ const activoDetalle = ref(null)
 const cargandoDetalle = ref(false)
 
 onMounted(async () => {
-  const [statsRes, histRes, encRes] = await Promise.all([
-    activoService.stats(),
-    historialService.listar({ pagina: 1, tamano: 6 }),
-    encargadoService.listar()
-  ])
-  stats.value = statsRes.data
-  actividad.value = histRes.data.items
-  totalEncargados.value = encRes.data.length
+  if (auth.esJefaAdministrativa) {
+    const [statsRes, histRes, solRes] = await Promise.all([
+      activoService.stats(),
+      historialService.listar({ pagina: 1, tamano: 6 }),
+      solicitudService.listarMias('Pendiente')
+    ])
+    stats.value = statsRes.data
+    actividad.value = histRes.data.items
+    totalSolicitudes.value = solRes.data.length
+  } else {
+    const [statsRes, histRes, encRes] = await Promise.all([
+      activoService.stats(),
+      historialService.listar({ pagina: 1, tamano: 6 }),
+      encargadoService.listar()
+    ])
+    stats.value = statsRes.data
+    actividad.value = histRes.data.items
+    totalEncargados.value = encRes.data.length
+  }
 })
 
 async function seleccionarCategoria(cat) {
@@ -325,7 +357,10 @@ const LABELS = {
   CambioPlaca: 'Cambio de placa',
   Eliminacion: 'Activo eliminado',
   Aprobacion: 'Eliminación aprobada',
-  Rechazo: 'Eliminación rechazada'
+  Rechazo: 'Eliminación rechazada',
+  SolicitudCambio: 'Solicitud de cambio enviada',
+  SolicitudAprobada: 'Solicitud de cambio aprobada',
+  SolicitudRechazada: 'Solicitud de cambio rechazada'
 }
 
 function labelAccion(tipo) {

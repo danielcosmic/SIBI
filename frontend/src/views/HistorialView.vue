@@ -36,6 +36,9 @@
             <option value="Aprobacion">Aprobación</option>
             <option value="Eliminacion">Eliminación</option>
             <option value="Rechazo">Rechazo</option>
+            <option value="SolicitudCambio">Solicitud de Cambio</option>
+            <option value="SolicitudAprobada">Solicitud Aprobada</option>
+            <option value="SolicitudRechazada">Solicitud Rechazada</option>
           </select>
         </div>
         <div>
@@ -321,9 +324,9 @@ onMounted(cargar)
 watch([pagina], cargar)
 watch([tipoAccion, usuarioNombre, desde, hasta], () => { pagina.value = 1; cargar() })
 
-const ICONOS = { Creacion: '✨', CambioUbicacion: '📍', CambioEncargado: '👤', CambioEstado: '🔄', CambioPlaca: '🏷️', Eliminacion: '🗑️', Aprobacion: '✅', Rechazo: '❌' }
-const LABELS = { Creacion: 'Creación', CambioUbicacion: 'Cambio de Ubicación', CambioEncargado: 'Cambio de Encargado', CambioEstado: 'Cambio de Estado', CambioPlaca: 'Cambio de Placa', Eliminacion: 'Eliminación', Aprobacion: 'Aprobación', Rechazo: 'Rechazo' }
-const BADGES = { Creacion: 'bg-indigo-100 text-indigo-800', CambioUbicacion: 'bg-blue-100 text-blue-800', CambioEncargado: 'bg-green-100 text-green-800', CambioEstado: 'bg-yellow-100 text-yellow-800', CambioPlaca: 'bg-purple-100 text-purple-800', Eliminacion: 'bg-red-100 text-red-800', Aprobacion: 'bg-teal-100 text-teal-800', Rechazo: 'bg-orange-100 text-orange-800' }
+const ICONOS = { Creacion: '✨', CambioUbicacion: '📍', CambioEncargado: '👤', CambioEstado: '🔄', CambioPlaca: '🏷️', Eliminacion: '🗑️', Aprobacion: '✅', Rechazo: '❌', SolicitudCambio: '📝', SolicitudAprobada: '✔️', SolicitudRechazada: '🚫' }
+const LABELS = { Creacion: 'Creación', CambioUbicacion: 'Cambio de Ubicación', CambioEncargado: 'Cambio de Encargado', CambioEstado: 'Cambio de Estado', CambioPlaca: 'Cambio de Placa', Eliminacion: 'Eliminación', Aprobacion: 'Aprobación', Rechazo: 'Rechazo', SolicitudCambio: 'Solicitud de Cambio', SolicitudAprobada: 'Solicitud Aprobada', SolicitudRechazada: 'Solicitud Rechazada' }
+const BADGES = { Creacion: 'bg-indigo-100 text-indigo-800', CambioUbicacion: 'bg-blue-100 text-blue-800', CambioEncargado: 'bg-green-100 text-green-800', CambioEstado: 'bg-yellow-100 text-yellow-800', CambioPlaca: 'bg-purple-100 text-purple-800', Eliminacion: 'bg-red-100 text-red-800', Aprobacion: 'bg-teal-100 text-teal-800', Rechazo: 'bg-orange-100 text-orange-800', SolicitudCambio: 'bg-amber-100 text-amber-800', SolicitudAprobada: 'bg-green-100 text-green-800', SolicitudRechazada: 'bg-red-100 text-red-800' }
 
 function iconoAccion(tipo) { return ICONOS[tipo] || '📋' }
 function labelAccion(tipo) { return LABELS[tipo] || tipo }

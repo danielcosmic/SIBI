@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using backend.Data;
 using backend.DTOs;
 using backend.Models;
@@ -34,11 +35,7 @@ public class UsuarioController : ControllerBase
         if (await _db.Usuarios.AnyAsync(u => u.Correo == request.Correo))
             return Conflict(new { mensaje = "Ya existe un usuario con ese correo." });
 
-        var rng = new Random();
-        var upper = "ABCDEFGHJKMNPQRSTUVWXYZ";
-        var lower = "abcdefghjkmnpqrstuvwxyz";
-        var digits = "23456789";
-        var tempPassword = $"{upper[rng.Next(upper.Length)]}{lower[rng.Next(lower.Length)]}{digits[rng.Next(digits.Length)]}{rng.Next(100, 999)}";
+        var tempPassword = GenerarContrasenaTemp();
 
         _db.Usuarios.Add(new Usuario
         {
@@ -53,16 +50,60 @@ public class UsuarioController : ControllerBase
         return Ok(new { correo = request.Correo, contrasenaTemp = tempPassword });
     }
 
-    [HttpPut("{correo}")]
-    public async Task<IActionResult> Editar(string correo, [FromBody] EditarUsuarioRequest request)
+    [HttpDelete("{correo}")]
+    public async Task<IActionResult> Eliminar(string correo)
     {
+        var correoActual = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        const string cuentaSoporte = "soporte.eic@ucr.ac.cr";
+
+        if (correo == cuentaSoporte)
+            return BadRequest(new { mensaje = "La cuenta de soporte del sistema no puede ser eliminada." });
+
+        if (correo == correoActual)
+            return BadRequest(new { mensaje = "No puedes eliminar tu propia cuenta." });
+
         var usuario = await _db.Usuarios.FindAsync(correo);
         if (usuario is null) return NotFound();
 
+        _db.Usuarios.Remove(usuario);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPut("{correo}")]
+    public async Task<IActionResult> Editar(string correo, [FromBody] EditarUsuarioRequest request)
+    {
+        const string cuentaSoporte = "soporte.eic@ucr.ac.cr";
+
+        var usuario = await _db.Usuarios.FindAsync(correo);
+        if (usuario is null) return NotFound();
+
+        if (correo == cuentaSoporte && request.Permisos != "Administradora")
+            return BadRequest(new { mensaje = "El rol de la cuenta de soporte no puede modificarse." });
+
         usuario.Nombre = request.Nombre;
-        usuario.Permisos = request.Permisos;
+        usuario.Permisos = correo == cuentaSoporte ? "Administradora" : request.Permisos;
         usuario.Activo = request.Activo;
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    private static string GenerarContrasenaTemp()
+    {
+        const string upper = "ABCDEFGHJKMNPQRSTUVWXYZ";
+        const string lower = "abcdefghjkmnpqrstuvwxyz";
+        const string digits = "23456789";
+        const string all = upper + lower + digits;
+        var rng = new Random();
+
+        var chars = new char[8];
+        chars[0] = upper[rng.Next(upper.Length)];
+        chars[1] = lower[rng.Next(lower.Length)];
+        chars[2] = digits[rng.Next(digits.Length)];
+        for (int i = 3; i < 8; i++)
+            chars[i] = all[rng.Next(all.Length)];
+
+        return new string(chars.OrderBy(_ => rng.Next()).ToArray());
     }
 }

@@ -8,5 +8,8 @@ export default {
     api.post('/usuario', data),
 
   editar: (correo, data) =>
-    api.put(`/usuario/${encodeURIComponent(correo)}`, data)
+    api.put(`/usuario/${encodeURIComponent(correo)}`, data),
+
+  eliminar: (correo) =>
+    api.delete(`/usuario/${encodeURIComponent(correo)}`)
 }

@@ -7,7 +7,7 @@
       <div class="bg-[#003d7a] text-white px-6 py-4 flex items-center justify-between rounded-t-2xl flex-shrink-0">
         <div>
           <h2 class="text-xl font-bold">
-            {{ mode === 'create' ? 'Nuevo Activo' : mode === 'edit' ? 'Editar Activo' : 'Detalle del Activo' }}
+            {{ mode === 'create' ? 'Nuevo Activo' : mode === 'edit' ? 'Editar Activo' : mode === 'solicitud' ? 'Proponer Cambios' : 'Detalle del Activo' }}
           </h2>
           <p v-if="mode === 'view'" class="text-blue-200 text-sm mt-0.5">{{ props.activo?.placa }}</p>
         </div>
@@ -21,6 +21,26 @@
       <!-- ── MODO VIEW: tarjetas detalladas ── -->
       <template v-if="mode === 'view'">
         <div class="overflow-y-auto flex-1 p-6 space-y-6">
+
+          <!-- Banner de solicitud pendiente (solo JefaAdministrativa) -->
+          <div v-if="solicitudPendiente" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-sm font-semibold text-amber-800">Cambio en espera de aprobación</p>
+              <span class="ml-auto text-xs text-amber-500">{{ formatFechaSolicitud(solicitudPendiente.fechaSolicitud) }}</span>
+            </div>
+            <ul class="space-y-1 pl-6">
+              <template v-for="campo in camposCambiados" :key="campo.label">
+                <li class="text-xs text-amber-700">
+                  <span class="font-medium">{{ campo.label }}:</span>
+                  <span class="line-through text-amber-400 mx-1">{{ campo.actual }}</span>
+                  <span class="italic font-medium">→ {{ campo.propuesto }}</span>
+                </li>
+              </template>
+            </ul>
+          </div>
 
           <!-- Identificación -->
           <div>
@@ -136,6 +156,17 @@
             Enviar a Desecho
           </button>
           <button
+            v-if="auth.esJefaAdministrativa && props.activo?.estado !== 'Desecho' && !solicitudPendiente"
+            type="button"
+            @click="$emit('solicitar')"
+            class="flex-1 px-4 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            Solicitar Cambio
+          </button>
+          <button
             v-if="auth.esGTI"
             type="button"
             @click="$emit('edit')"
@@ -149,7 +180,7 @@
         </div>
       </template>
 
-      <!-- ── MODO CREATE / EDIT: formulario ── -->
+      <!-- ── MODO CREATE / EDIT / SOLICITUD: formulario ── -->
       <template v-else>
         <div class="overflow-y-auto flex-1 p-6 space-y-6">
 
@@ -254,19 +285,27 @@
           <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">{{ error }}</p>
         </div>
 
-        <!-- Footer create/edit -->
+        <!-- Aviso modo solicitud -->
+        <div v-if="mode === 'solicitud'" class="mx-6 mb-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+          Los cambios propuestos serán enviados para revisión y no se aplicarán hasta ser aprobados por Administradora o GTI.
+        </div>
+
+        <!-- Footer create/edit/solicitud -->
         <div class="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
-          <button type="button" @click="mode === 'edit' ? $emit('cancelEdit') : $emit('close')"
+          <button type="button" @click="mode === 'edit' || mode === 'solicitud' ? $emit('cancelEdit') : $emit('close')"
             class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
             Cancelar
           </button>
           <button @click="handleSubmit" :disabled="loading"
-            class="flex-1 px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium disabled:bg-gray-400 flex items-center justify-center gap-2">
+            :class="mode === 'solicitud'
+              ? 'bg-amber-500 hover:bg-amber-600'
+              : 'bg-[#003d7a] hover:bg-[#002d5a]'"
+            class="flex-1 px-4 py-2.5 text-white rounded-lg transition font-medium disabled:bg-gray-400 flex items-center justify-center gap-2">
             <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
             </svg>
-            {{ loading ? 'Guardando...' : mode === 'create' ? 'Crear Activo' : 'Guardar Cambios' }}
+            {{ loading ? (mode === 'solicitud' ? 'Enviando...' : 'Guardando...') : mode === 'create' ? 'Crear Activo' : mode === 'solicitud' ? 'Enviar Solicitud' : 'Guardar Cambios' }}
           </button>
         </div>
       </template>
@@ -279,19 +318,36 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import activoService from '@/services/activoService'
+import solicitudService from '@/services/solicitudService'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+const solicitudPendiente = ref(null)
+
+async function cargarSolicitudPendiente(placa) {
+  if (!auth.esJefaAdministrativa || !placa) { solicitudPendiente.value = null; return }
+  try {
+    const res = await solicitudService.obtenerPendienteDeActivo(placa)
+    solicitudPendiente.value = res.status === 204 ? null : res.data
+  } catch {
+    solicitudPendiente.value = null
+  }
+}
+
+function formatFechaSolicitud(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
 
 const props = defineProps({
-  mode: { type: String, required: true }, // 'create' | 'edit' | 'view'
+  mode: { type: String, required: true }, // 'create' | 'edit' | 'view' | 'solicitud'
   activo: { type: Object, default: null },
   categorias: { type: Array, default: () => [] },
   encargados: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['close', 'saved', 'edit', 'enviarDesecho', 'cancelEdit'])
+const emit = defineEmits(['close', 'saved', 'edit', 'enviarDesecho', 'cancelEdit', 'solicitar'])
 
 const categoriasOptions = computed(() =>
   props.categorias.map(c => ({ value: c.id, label: `${c.icono ?? ''} ${c.nombre}`.trim() }))
@@ -332,14 +388,46 @@ watch(() => props.activo, (activo) => {
       encargadoId: activo.encargadoActualId || '',
       estado: activo.estado
     }
+    cargarSolicitudPendiente(activo.placa)
+  } else {
+    solicitudPendiente.value = null
   }
 }, { immediate: true })
+
+const camposCambiados = computed(() => {
+  if (!solicitudPendiente.value || !props.activo) return []
+  const d = solicitudPendiente.value.datosNuevos
+  const a = props.activo
+  const cambios = []
+  if (d.articulo !== a.articulo)           cambios.push({ label: 'Artículo',   actual: a.articulo,         propuesto: d.articulo })
+  if (d.marca !== a.marca)                 cambios.push({ label: 'Marca',      actual: a.marca,            propuesto: d.marca })
+  if (d.modelo !== a.modelo)               cambios.push({ label: 'Modelo',     actual: a.modelo,           propuesto: d.modelo })
+  if (d.numSerial !== a.numSerial)         cambios.push({ label: 'N° Serial',  actual: a.numSerial,        propuesto: d.numSerial })
+  if (d.categoriaNombre !== a.categoriaNombre) cambios.push({ label: 'Categoría', actual: a.categoriaNombre, propuesto: d.categoriaNombre })
+  if (d.ubicacionActual !== a.ubicacionActual) cambios.push({ label: 'Ubicación', actual: a.ubicacionActual,  propuesto: d.ubicacionActual })
+  if (d.encargadoNombre !== a.encargadoActual) cambios.push({ label: 'Encargado', actual: a.encargadoActual,  propuesto: d.encargadoNombre })
+  if (d.estado !== a.estado)               cambios.push({ label: 'Estado',     actual: a.estado,           propuesto: d.estado })
+  return cambios
+})
 
 async function handleSubmit() {
   error.value = ''
   loading.value = true
   try {
-    if (props.mode === 'create') {
+    if (props.mode === 'solicitud') {
+      await solicitudService.crear({
+        activoPlaca: form.value.placa,
+        marca: form.value.marca,
+        modelo: form.value.modelo,
+        numSerial: form.value.numSerial,
+        articulo: form.value.articulo,
+        categoriaId: Number(form.value.categoriaId),
+        observaciones: form.value.observaciones || null,
+        ubicacionActual: form.value.ubicacionActual,
+        encargadoId: form.value.encargadoId,
+        estado: form.value.estado
+      })
+    } else if (props.mode === 'create') {
       await activoService.crear({
         placa: form.value.placa,
         tipoPlaca: form.value.tipoPlaca,
@@ -367,7 +455,7 @@ async function handleSubmit() {
     }
     emit('saved')
   } catch (e) {
-    error.value = e.response?.data?.mensaje || 'Error al guardar el activo.'
+    error.value = e.response?.data?.mensaje || (props.mode === 'solicitud' ? 'Error al enviar la solicitud.' : 'Error al guardar el activo.')
   } finally {
     loading.value = false
   }

@@ -7,6 +7,6 @@ export default {
   recuperar: (correo) =>
     api.post('/auth/recuperar', { correo }),
 
-  cambiarContrasena: (nuevaContrasena) =>
-    api.post('/auth/cambiar-contrasena', { nuevaContrasena })
+  cambiarContrasena: (contrasenaActual, nuevaContrasena) =>
+    api.post('/auth/cambiar-contrasena', { contrasenaActual, nuevaContrasena })
 }

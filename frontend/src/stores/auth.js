@@ -12,7 +12,8 @@ export const useAuthStore = defineStore('auth', {
     esGTI: (state) => ['GTI', 'Administradora'].includes(state.usuario?.permisos || ''),
     nombre: (state) => state.usuario?.nombre || '',
     correo: (state) => state.usuario?.correo || '',
-    esContrasenaTemporal: (state) => !!state.usuario?.esContrasenaTemporal
+    esContrasenaTemporal: (state) => !!state.usuario?.esContrasenaTemporal,
+    esJefaAdministrativa: (state) => state.usuario?.permisos === 'JefaAdministrativa'
   },
   actions: {
     setAuth(token, usuario) {

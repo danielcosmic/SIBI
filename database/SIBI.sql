@@ -139,8 +139,41 @@ CREATE TABLE Historial (
             'CambioPlaca',
             'Eliminacion',
             'Aprobacion',
-            'Rechazo'
+            'Rechazo',
+            'SolicitudCambio',
+            'SolicitudAprobada',
+            'SolicitudRechazada'
         ))
+);
+
+-- 9. Tabla SolicitudCambio
+--    Propuestas de cambio enviadas por la JefaAdministrativa.
+--    Deben ser aprobadas o rechazadas por Administradora o GTI.
+--    Los cambios propuestos se serializan como JSON en DatosNuevos.
+CREATE TABLE SolicitudCambio (
+    Id                INT          IDENTITY(1,1) NOT NULL,
+    ActivoPlaca       VARCHAR(8)   NOT NULL,
+    SolicitanteCorreo VARCHAR(50)  NOT NULL,
+    FechaSolicitud    DATETIME     NOT NULL DEFAULT GETDATE(),
+    DatosNuevos       NVARCHAR(MAX) NOT NULL,
+    Estado            VARCHAR(20)  NOT NULL DEFAULT 'Pendiente',
+    RevisorCorreo     VARCHAR(50)  NULL,
+    FechaResolucion   DATETIME     NULL,
+    Comentario        NVARCHAR(500) NULL,
+
+    CONSTRAINT PK_SolicitudCambio PRIMARY KEY (Id),
+
+    CONSTRAINT FK_SolicitudCambio_Activo
+        FOREIGN KEY (ActivoPlaca)       REFERENCES Activo(Placa),
+
+    CONSTRAINT FK_SolicitudCambio_Solicitante
+        FOREIGN KEY (SolicitanteCorreo) REFERENCES Usuario(Correo),
+
+    CONSTRAINT FK_SolicitudCambio_Revisor
+        FOREIGN KEY (RevisorCorreo)     REFERENCES Usuario(Correo),
+
+    CONSTRAINT CHK_SolicitudCambio_Estado
+        CHECK (Estado IN ('Pendiente', 'Aprobada', 'Rechazada'))
 );
 
 -- ============================================================

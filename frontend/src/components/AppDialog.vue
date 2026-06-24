@@ -45,7 +45,7 @@
 
             <!-- Body -->
             <div class="px-6 py-5">
-              <p class="text-gray-600 leading-relaxed">{{ state.message }}</p>
+              <p class="text-gray-600 leading-relaxed" v-html="state.message"></p>
             </div>
 
             <!-- Buttons -->

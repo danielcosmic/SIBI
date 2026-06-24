@@ -38,7 +38,7 @@
                 </div>
               </td>
               <td class="px-6 py-4">
-                <span class="px-3 py-1 rounded-full text-xs font-medium" :class="rolClase(u.permisos)">{{ u.permisos }}</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium" :class="rolClase(u.permisos)">{{ rolDisplay(u.permisos) }}</span>
               </td>
               <td class="px-6 py-4">
                 <span class="px-3 py-1 rounded-full text-xs font-medium" :class="u.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
@@ -46,9 +46,20 @@
                 </span>
               </td>
               <td class="px-6 py-4">
-                <button @click="editarUsuario(u)" class="p-2 text-green-600 hover:bg-green-50 rounded transition" title="Editar">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </button>
+                <div class="flex items-center gap-1">
+                  <button @click="editarUsuario(u)" class="p-2 text-green-600 hover:bg-green-50 rounded transition" title="Editar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <button
+                    @click="eliminarUsuario(u)"
+                    class="p-2 text-red-500 hover:bg-red-50 rounded transition"
+                    :class="(u.correo === authCorreo || u.correo === 'soporte.eic@ucr.ac.cr') ? 'opacity-30 cursor-not-allowed' : ''"
+                    :disabled="u.correo === authCorreo || u.correo === 'soporte.eic@ucr.ac.cr'"
+                    title="Eliminar"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -97,12 +108,18 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
-            <select v-model="form.permisos" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] outline-none">
+            <select
+              v-model="form.permisos"
+              required
+              :disabled="editando === 'soporte.eic@ucr.ac.cr'"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] outline-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
               <option value="Administradora">Administradora</option>
               <option value="GTI">GTI</option>
               <option value="JefaAdministrativa">Jefa Administrativa</option>
               <option value="Invitado">Invitado</option>
             </select>
+            <p v-if="editando === 'soporte.eic@ucr.ac.cr'" class="mt-1 text-xs text-gray-400">El rol de la cuenta de soporte no puede modificarse.</p>
           </div>
           <div v-if="editando">
             <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
@@ -111,10 +128,43 @@
               <option :value="false">Inactivo</option>
             </select>
           </div>
-          <div v-if="contrasenaTemp" class="bg-gray-100 rounded-lg p-4">
-            <p class="text-sm text-gray-600 mb-1">Contraseña temporal generada:</p>
-            <p class="text-xl font-mono font-bold text-[#003d7a] tracking-wider">{{ contrasenaTemp }}</p>
-            <p class="text-xs text-gray-500 mt-1">Comparte esta clave de forma segura con el usuario.</p>
+          <!-- Credenciales generadas -->
+          <div v-if="contrasenaTemp" class="rounded-xl border border-[#c7dff7] overflow-hidden">
+            <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] px-4 py-2.5 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <p class="text-white text-sm font-medium">Usuario creado exitosamente</p>
+            </div>
+            <div class="bg-[#f0f6ff] p-4 space-y-3">
+              <div>
+                <p class="text-xs text-gray-500 mb-0.5">Correo</p>
+                <p class="text-sm font-medium text-gray-800">{{ form.correo }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 mb-0.5">Contraseña temporal</p>
+                <p class="text-2xl font-mono font-bold text-[#003d7a] tracking-widest">{{ contrasenaTemp }}</p>
+              </div>
+              <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                El usuario deberá cambiar esta contraseña en su primer ingreso al sistema.
+              </p>
+              <button
+                type="button"
+                @click="copiarCredenciales"
+                class="w-full flex items-center justify-center gap-2 py-2 rounded-lg border transition text-sm font-medium"
+                :class="copiado
+                  ? 'bg-green-50 border-green-300 text-green-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'"
+              >
+                <svg v-if="!copiado" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                {{ copiado ? 'Credenciales copiadas' : 'Copiar credenciales' }}
+              </button>
+            </div>
           </div>
           <div class="flex gap-3 pt-2">
             <button type="button" @click="cerrarModal" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">Cancelar</button>
@@ -130,14 +180,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import usuarioService from '@/services/usuarioService'
+import { useAuthStore } from '@/stores/auth'
+import { useDialog } from '@/composables/useDialog'
+
+const auth = useAuthStore()
+const dialog = useDialog()
+const authCorreo = computed(() => auth.correo)
 
 const usuarios = ref([])
 const loading = ref(false)
 const mostrarModal = ref(false)
 const editando = ref(null)
 const contrasenaTemp = ref('')
+const copiado = ref(false)
 const formError = ref('')
 const formLoading = ref(false)
 const form = ref({ nombre: '', correo: '', permisos: 'Invitado', activo: true })
@@ -154,6 +211,7 @@ function editarUsuario(u) {
   editando.value = u.correo
   form.value = { nombre: u.nombre, correo: u.correo, permisos: u.permisos, activo: u.activo }
   contrasenaTemp.value = ''
+  copiado.value = false
   formError.value = ''
   mostrarModal.value = true
 }
@@ -162,6 +220,7 @@ function cerrarModal() {
   mostrarModal.value = false
   editando.value = null
   contrasenaTemp.value = ''
+  copiado.value = false
   formError.value = ''
   form.value = { nombre: '', correo: '', permisos: 'Invitado', activo: true }
 }
@@ -176,6 +235,7 @@ async function guardarUsuario() {
     } else {
       const { data } = await usuarioService.crear({ nombre: form.value.nombre, correo: form.value.correo, permisos: form.value.permisos })
       contrasenaTemp.value = data.contrasenaTemp
+      copiado.value = false
     }
     await cargar()
   } catch (e) {
@@ -185,8 +245,37 @@ async function guardarUsuario() {
   }
 }
 
+async function eliminarUsuario(u) {
+  const confirmado = await dialog.confirm({
+    type: 'danger',
+    title: 'Eliminar usuario',
+    message: `¿Estás seguro de que deseas eliminar a <strong>${u.nombre}</strong> (${u.correo})? Esta acción no se puede deshacer.`,
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar'
+  })
+  if (!confirmado) return
+  try {
+    await usuarioService.eliminar(u.correo)
+    await cargar()
+  } catch (e) {
+    await dialog.alert({
+      type: 'danger',
+      title: 'No se pudo eliminar',
+      message: e.response?.data?.mensaje || 'Ocurrió un error al eliminar el usuario.'
+    })
+  }
+}
+
+async function copiarCredenciales() {
+  const texto = `Correo: ${form.value.correo}\nContraseña temporal: ${contrasenaTemp.value}\n\nAl ingresar por primera vez, el sistema le pedirá establecer una nueva contraseña.`
+  await navigator.clipboard.writeText(texto)
+  copiado.value = true
+  setTimeout(() => { copiado.value = false }, 3000)
+}
+
 const rolClases = { Administradora: 'bg-purple-100 text-purple-800', GTI: 'bg-blue-100 text-blue-800', JefaAdministrativa: 'bg-green-100 text-green-800', Invitado: 'bg-gray-100 text-gray-800' }
 function rolClase(r) { return rolClases[r] || 'bg-gray-100 text-gray-800' }
+function rolDisplay(r) { return r === 'JefaAdministrativa' ? 'Jefa Administrativa' : r }
 
 const rolesInfo = [
   { nombre: 'Administradora', borde: 'border-purple-500', bg: 'bg-purple-100', icono: 'text-purple-600', check: 'text-purple-500', permisos: ['Ver, crear y editar activos del inventario', 'Aprobar cambios de placa', 'Crear usuarios y generar claves temporales', 'Aceptar/rechazar solicitudes de eliminación', 'Agregar y gestionar categorías'] },

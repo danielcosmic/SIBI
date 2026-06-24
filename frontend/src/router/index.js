@@ -59,6 +59,18 @@ const routes = [
         path: 'desecho',
         name: 'Desecho',
         component: () => import('@/views/DesechoView.vue')
+      },
+      {
+        path: 'solicitudes',
+        name: 'Solicitudes',
+        component: () => import('@/views/SolicitudesView.vue'),
+        meta: { requiresGTIorAdmin: true }
+      },
+      {
+        path: 'mis-solicitudes',
+        name: 'MisSolicitudes',
+        component: () => import('@/views/MisSolicitudesView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },

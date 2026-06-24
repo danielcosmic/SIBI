@@ -1,3 +1,3 @@
 namespace backend.DTOs;
 
-public record CambiarContrasenaRequest(string NuevaContrasena);
+public record CambiarContrasenaRequest(string ContrasenaActual, string NuevaContrasena);

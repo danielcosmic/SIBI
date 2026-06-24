@@ -131,6 +131,7 @@
       @close="modalOpen = false"
       @saved="onSaved"
       @edit="modalMode = 'edit'"
+      @solicitar="modalMode = 'solicitud'"
       @cancelEdit="modalMode = 'view'"
       @enviarDesecho="confirmarDesecho"
     />
@@ -231,8 +232,17 @@ async function confirmarDesecho(activo) {
 }
 
 async function onSaved() {
+  const wasSolicitud = modalMode.value === 'solicitud'
   modalOpen.value = false
-  await cargarActivos()
+  if (wasSolicitud) {
+    await dialog.alert({
+      title: 'Solicitud enviada',
+      message: 'Tu solicitud de cambio fue enviada y está pendiente de revisión por Administradora o GTI.',
+      type: 'info'
+    })
+  } else {
+    await cargarActivos()
+  }
 }
 
 const estadoClases = {

@@ -39,10 +39,13 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> CambiarContrasena([FromBody] CambiarContrasenaRequest request)
     {
         var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var ok = await _auth.CambiarContrasenaAsync(correo, request.NuevaContrasena);
-        if (!ok)
-            return BadRequest(new { mensaje = "La contraseña debe tener mínimo 6 caracteres, una mayúscula, una minúscula y un número." });
-        return NoContent();
+        var resultado = await _auth.CambiarContrasenaAsync(correo, request.ContrasenaActual, request.NuevaContrasena);
+        return resultado switch
+        {
+            "incorrecta" => BadRequest(new { mensaje = "La contraseña actual es incorrecta." }),
+            "debil"      => BadRequest(new { mensaje = "La nueva contraseña debe tener mínimo 6 caracteres, una mayúscula, una minúscula y un número." }),
+            _            => NoContent()
+        };
     }
 
     [HttpGet("hash-temp")]

@@ -14,6 +14,7 @@ public class SibiDbContext : DbContext
     public DbSet<Ubicacion> Ubicaciones { get; set; }
     public DbSet<Activo> Activos { get; set; }
     public DbSet<Historial> Historial { get; set; }
+    public DbSet<SolicitudCambio> SolicitudesCambio { get; set; }
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -77,6 +78,23 @@ public class SibiDbContext : DbContext
             e.HasOne(h => h.Usuario)
              .WithMany()
              .HasForeignKey(h => h.UsuarioCorreo)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        mb.Entity<SolicitudCambio>(e =>
+        {
+            e.ToTable("SolicitudCambio");
+            e.HasOne(s => s.Activo)
+             .WithMany()
+             .HasForeignKey(s => s.ActivoPlaca)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(s => s.Solicitante)
+             .WithMany()
+             .HasForeignKey(s => s.SolicitanteCorreo)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(s => s.Revisor)
+             .WithMany()
+             .HasForeignKey(s => s.RevisorCorreo)
              .OnDelete(DeleteBehavior.Restrict);
         });
     }

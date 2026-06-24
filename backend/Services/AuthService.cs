@@ -65,19 +65,21 @@ public class AuthService
         return tempPassword;
     }
 
-    public async Task<bool> CambiarContrasenaAsync(string correo, string nueva)
+    public async Task<string> CambiarContrasenaAsync(string correo, string actual, string nueva)
     {
-        if (!ValidarFuerzaContrasena(nueva)) return false;
-
         var usuario = await _db.Usuarios
             .FirstOrDefaultAsync(u => u.Correo == correo && u.Activo);
 
-        if (usuario is null) return false;
+        if (usuario is null || !BCrypt.Net.BCrypt.Verify(actual, usuario.Contrasena))
+            return "incorrecta";
+
+        if (!ValidarFuerzaContrasena(nueva))
+            return "debil";
 
         usuario.Contrasena = BCrypt.Net.BCrypt.HashPassword(nueva);
         usuario.EsContrasenaTemporal = false;
         await _db.SaveChangesAsync();
-        return true;
+        return "ok";
     }
 
     // Mínimo 6 chars, al menos una mayúscula, minúscula y número (regla del mockup)
