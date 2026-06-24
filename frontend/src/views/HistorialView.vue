@@ -61,15 +61,15 @@
       <div v-if="loading" class="text-center py-10 text-gray-400">Cargando...</div>
       <div v-else-if="registros.length === 0" class="text-center py-10 text-gray-400">No hay registros con los filtros seleccionados.</div>
       <div v-else class="relative">
-        <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
-        <div class="space-y-6">
+        <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-300" />
+        <div class="space-y-4">
           <div v-for="reg in registros" :key="reg.id" class="relative flex gap-6">
-            <div class="flex-shrink-0 w-12 h-12 bg-white border-4 border-gray-200 rounded-full flex items-center justify-center z-10">
+            <div class="flex-shrink-0 w-12 h-12 bg-white border-4 border-[#003d7a]/30 rounded-full flex items-center justify-center z-10 shadow-sm">
               <span class="text-lg">{{ iconoAccion(reg.tipoAccion) }}</span>
             </div>
             <div
               @click="abrirDetalle(reg)"
-              class="flex-1 bg-gradient-to-br from-blue-50/30 to-white rounded-xl p-4 hover:shadow-lg transition-all duration-300 border border-blue-100/30 cursor-pointer hover:border-blue-300/50"
+              class="flex-1 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-blue-300 cursor-pointer"
             >
               <div class="flex items-center gap-2 mb-2">
                 <span class="px-3 py-1 rounded-full text-xs font-medium" :class="badgeAccion(reg.tipoAccion)">
@@ -92,10 +92,43 @@
       </div>
 
       <!-- Paginación -->
-      <div class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-100">
-        <button @click="pagina--" :disabled="pagina === 1" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition">Anterior</button>
-        <span class="text-sm text-gray-600">Página {{ pagina }} de {{ totalPaginas }}</span>
-        <button @click="pagina++" :disabled="pagina >= totalPaginas" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition">Siguiente</button>
+      <div v-if="totalPaginas > 1" class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-2 flex-wrap">
+        <p class="text-sm text-gray-500">
+          {{ (pagina - 1) * tamano + 1 }}–{{ Math.min(pagina * tamano, total) }} de {{ total }} registros
+        </p>
+        <div class="flex items-center gap-1">
+          <!-- Primera -->
+          <button @click="pagina = 1" :disabled="pagina === 1"
+            class="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition">
+            «
+          </button>
+          <!-- Anterior -->
+          <button @click="pagina--" :disabled="pagina === 1"
+            class="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition">
+            ‹
+          </button>
+          <!-- Números -->
+          <template v-for="p in paginasVisibles" :key="p">
+            <span v-if="p === '...'" class="px-2 text-gray-400 select-none">…</span>
+            <button v-else @click="pagina = p"
+              class="px-3 py-1.5 text-sm border rounded-lg transition font-medium"
+              :class="p === pagina
+                ? 'bg-[#003d7a] text-white border-[#003d7a]'
+                : 'border-gray-300 hover:bg-gray-100 text-gray-700'">
+              {{ p }}
+            </button>
+          </template>
+          <!-- Siguiente -->
+          <button @click="pagina++" :disabled="pagina >= totalPaginas"
+            class="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition">
+            ›
+          </button>
+          <!-- Última -->
+          <button @click="pagina = totalPaginas" :disabled="pagina === totalPaginas"
+            class="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition">
+            »
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -119,10 +152,10 @@
         </div>
 
         <!-- Cuerpo scrollable -->
-        <div class="overflow-y-auto flex-1 p-6 space-y-6">
+        <div class="overflow-y-auto flex-1 p-4 space-y-3">
 
           <!-- Evento del historial -->
-          <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+          <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Evento registrado</p>
             <div class="flex flex-wrap items-center gap-2 mb-2">
               <span class="text-lg">{{ iconoAccion(registroActivo?.tipoAccion) }}</span>
@@ -151,9 +184,9 @@
           <!-- Datos del activo -->
           <template v-else-if="activoDetalle">
             <!-- Identificación -->
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Identificación</p>
-              <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Identificación</p>
+              <div class="grid grid-cols-2 gap-3 p-4">
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-400 mb-0.5">Placa</p>
                   <p class="font-semibold text-[#003d7a] font-mono">{{ activoDetalle.placa }}</p>
@@ -182,9 +215,9 @@
             </div>
 
             <!-- Clasificación -->
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Clasificación</p>
-              <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Clasificación</p>
+              <div class="grid grid-cols-2 gap-3 p-4">
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-400 mb-0.5">Categoría</p>
                   <p class="font-medium text-gray-800">{{ activoDetalle.categoriaNombre }}</p>
@@ -208,11 +241,11 @@
             </div>
 
             <!-- Ubicación -->
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Ubicación</p>
-              <div class="grid grid-cols-2 gap-4">
-                <div class="bg-blue-50/60 rounded-lg p-3 border border-blue-100">
-                  <p class="text-xs text-blue-400 mb-0.5">Ubicación Actual</p>
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Ubicación</p>
+              <div class="grid grid-cols-2 gap-3 p-4">
+                <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <p class="text-xs text-blue-500 mb-0.5">Ubicación Actual</p>
                   <p class="font-semibold text-blue-900">{{ activoDetalle.ubicacionActual }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
@@ -223,11 +256,11 @@
             </div>
 
             <!-- Encargados -->
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Encargados</p>
-              <div class="grid grid-cols-2 gap-4">
-                <div class="bg-blue-50/60 rounded-lg p-3 border border-blue-100">
-                  <p class="text-xs text-blue-400 mb-0.5">Encargado Actual</p>
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Encargados</p>
+              <div class="grid grid-cols-2 gap-3 p-4">
+                <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <p class="text-xs text-blue-500 mb-0.5">Encargado Actual</p>
                   <p class="font-semibold text-blue-900">{{ activoDetalle.encargadoActual }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
@@ -238,9 +271,9 @@
             </div>
 
             <!-- Observaciones -->
-            <div v-if="activoDetalle.observaciones">
-              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Observaciones</p>
-              <div class="bg-gray-50 rounded-lg p-3">
+            <div v-if="activoDetalle.observaciones" class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Observaciones</p>
+              <div class="p-4 bg-gray-50">
                 <p class="text-sm text-gray-700">{{ activoDetalle.observaciones }}</p>
               </div>
             </div>
@@ -248,10 +281,18 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 border-t border-gray-100 flex-shrink-0">
+        <div class="px-6 py-4 border-t border-gray-200 flex-shrink-0 flex gap-3">
           <button @click="cerrarDetalle"
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+            class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
             Cerrar
+          </button>
+          <button v-if="!activoNoEncontrado && activoDetalle"
+            @click="router.push('/activo/' + registroActivo?.activoPlaca); cerrarDetalle()"
+            class="flex items-center justify-center gap-1.5 flex-1 px-4 py-2.5 text-[#0066cc] border border-[#0066cc]/30 rounded-lg hover:bg-blue-50 transition font-medium text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Ver Detalle
           </button>
         </div>
       </div>
@@ -261,8 +302,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import historialService from '@/services/historialService'
 import activoService from '@/services/activoService'
+
+const router = useRouter()
 
 const registros = ref([])
 const total = ref(0)
@@ -275,6 +319,19 @@ const hasta = ref('')
 const loading = ref(false)
 
 const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamano.value)))
+
+const paginasVisibles = computed(() => {
+  const total = totalPaginas.value
+  const cur = pagina.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages = []
+  pages.push(1)
+  if (cur > 3) pages.push('...')
+  for (let p = Math.max(2, cur - 1); p <= Math.min(total - 1, cur + 1); p++) pages.push(p)
+  if (cur < total - 2) pages.push('...')
+  pages.push(total)
+  return pages
+})
 
 const modalAbierto = ref(false)
 const registroActivo = ref(null)

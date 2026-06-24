@@ -20,7 +20,7 @@
 
       <!-- ── MODO VIEW: tarjetas detalladas ── -->
       <template v-if="mode === 'view'">
-        <div class="overflow-y-auto flex-1 p-6 space-y-6">
+        <div class="overflow-y-auto flex-1 p-4 space-y-3">
 
           <!-- Banner de solicitud pendiente (solo JefaAdministrativa) -->
           <div v-if="solicitudPendiente" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
@@ -43,9 +43,9 @@
           </div>
 
           <!-- Identificación -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Identificación</p>
-            <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-gray-200 overflow-hidden">
+            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Identificación</p>
+            <div class="grid grid-cols-2 gap-3 p-4">
               <div class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-400 mb-0.5">Placa</p>
                 <p class="font-semibold text-[#003d7a] font-mono">{{ props.activo?.placa }}</p>
@@ -74,9 +74,9 @@
           </div>
 
           <!-- Clasificación -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Clasificación</p>
-            <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-gray-200 overflow-hidden">
+            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Clasificación</p>
+            <div class="grid grid-cols-2 gap-3 p-4">
               <div class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-400 mb-0.5">Categoría</p>
                 <p class="font-medium text-gray-800">{{ props.activo?.categoriaNombre }}</p>
@@ -100,11 +100,11 @@
           </div>
 
           <!-- Ubicación -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Ubicación</p>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-blue-50/60 rounded-lg p-3 border border-blue-100">
-                <p class="text-xs text-blue-400 mb-0.5">Ubicación Actual</p>
+          <div class="rounded-xl border border-gray-200 overflow-hidden">
+            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Ubicación</p>
+            <div class="grid grid-cols-2 gap-3 p-4">
+              <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <p class="text-xs text-blue-500 mb-0.5">Ubicación Actual</p>
                 <p class="font-semibold text-blue-900">{{ props.activo?.ubicacionActual }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg p-3">
@@ -115,11 +115,11 @@
           </div>
 
           <!-- Encargados -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Encargados</p>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-blue-50/60 rounded-lg p-3 border border-blue-100">
-                <p class="text-xs text-blue-400 mb-0.5">Encargado Actual</p>
+          <div class="rounded-xl border border-gray-200 overflow-hidden">
+            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Encargados</p>
+            <div class="grid grid-cols-2 gap-3 p-4">
+              <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <p class="text-xs text-blue-500 mb-0.5">Encargado Actual</p>
                 <p class="font-semibold text-blue-900">{{ props.activo?.encargadoActual }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg p-3">
@@ -130,19 +130,26 @@
           </div>
 
           <!-- Observaciones -->
-          <div v-if="props.activo?.observaciones">
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Observaciones</p>
-            <div class="bg-gray-50 rounded-lg p-3">
+          <div v-if="props.activo?.observaciones" class="rounded-xl border border-gray-200 overflow-hidden">
+            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Observaciones</p>
+            <div class="p-4 bg-gray-50">
               <p class="text-sm text-gray-700">{{ props.activo?.observaciones }}</p>
             </div>
           </div>
         </div>
 
         <!-- Footer view -->
-        <div class="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+        <div class="flex gap-3 px-6 py-4 border-t border-gray-200 flex-shrink-0">
           <button type="button" @click="$emit('close')"
-            class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+            class="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
             Cerrar
+          </button>
+          <button type="button" @click="router.push('/activo/' + props.activo?.placa); $emit('close')"
+            class="flex items-center gap-1.5 px-4 py-2.5 text-[#0066cc] border border-[#0066cc]/30 rounded-lg hover:bg-blue-50 transition font-medium text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Ver Detalle
           </button>
           <button
             v-if="auth.esGTI && props.activo?.estado !== 'Desecho'"
@@ -317,11 +324,13 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import activoService from '@/services/activoService'
 import solicitudService from '@/services/solicitudService'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import { useAuthStore } from '@/stores/auth'
 
+const router = useRouter()
 const auth = useAuthStore()
 const solicitudPendiente = ref(null)
 

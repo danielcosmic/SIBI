@@ -7,61 +7,37 @@
             <div class="w-20 h-20 bg-gradient-to-br from-[#003d7a] to-[#0066cc] rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
               <span class="text-white text-2xl font-bold tracking-wide">SIBI</span>
             </div>
-            <h1 class="text-2xl font-bold text-[#003d7a] mb-2">Recuperar Contraseña</h1>
-            <p class="text-gray-600 text-sm">Ingresa tu correo institucional para recibir una contraseña temporal</p>
+            <h1 class="text-2xl font-bold text-[#003d7a] mb-2">¿Olvidaste tu contraseña?</h1>
+            <p class="text-gray-600 text-sm">Contacta a un administrador o al equipo de GTI para que te proporcionen una contraseña temporal.</p>
           </div>
 
-          <!-- Resultado exitoso -->
-          <div v-if="contrasenaTemp" class="space-y-4">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p class="text-sm text-green-800 font-medium mb-2">Contraseña temporal generada:</p>
-              <p class="text-2xl font-mono font-bold text-[#003d7a] tracking-wider text-center py-2">
-                {{ contrasenaTemp }}
-              </p>
+          <div class="rounded-xl border border-blue-100 overflow-hidden mb-6">
+            <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] px-4 py-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <p class="text-white text-sm font-medium">Correo de soporte</p>
             </div>
-            <p class="text-sm text-gray-600 text-center">
-              Usa esta contraseña para iniciar sesión. Deberás cambiarla al ingresar.
+            <div class="bg-blue-50 px-4 py-4 text-center">
+              <a href="mailto:soporte.eic@ucr.ac.cr" class="text-[#003d7a] font-semibold text-lg hover:underline">
+                soporte.eic@ucr.ac.cr
+              </a>
+              <p class="text-xs text-gray-500 mt-1">Escríbenos indicando tu nombre completo y correo institucional.</p>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6">
+            <p class="text-sm text-amber-800">
+              Una vez que recibas la contraseña temporal, deberás cambiarla en tu primer ingreso al sistema.
             </p>
-            <button
-              @click="() => { navigator.clipboard.writeText(contrasenaTemp) }"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium"
-            >
-              Copiar contraseña
-            </button>
-            <RouterLink
-              to="/"
-              class="block w-full text-center px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium"
-            >
-              Ir al inicio de sesión
-            </RouterLink>
           </div>
 
-          <!-- Formulario -->
-          <form v-else @submit.prevent="handleSubmit" class="space-y-4">
-            <div v-if="error" class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              {{ error }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Correo Institucional</label>
-              <input
-                v-model="correo"
-                type="email"
-                placeholder="usuario@ucr.ac.cr"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none transition"
-              />
-            </div>
-            <button
-              type="submit"
-              :disabled="loading"
-              class="w-full bg-[#003d7a] text-white py-2.5 rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-400 font-medium"
-            >
-              {{ loading ? 'Procesando...' : 'Recuperar Contraseña' }}
-            </button>
-            <div class="text-center">
-              <RouterLink to="/" class="text-sm text-[#0066cc] hover:underline">Volver al inicio de sesión</RouterLink>
-            </div>
-          </form>
+          <RouterLink
+            to="/"
+            class="block w-full text-center px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium"
+          >
+            Volver al inicio de sesión
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -71,29 +47,5 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import authService from '@/services/authService'
 import AppFooter from '@/components/AppFooter.vue'
-
-const correo = ref('')
-const error = ref('')
-const loading = ref(false)
-const contrasenaTemp = ref('')
-
-async function handleSubmit() {
-  error.value = ''
-  if (!correo.value.endsWith('@ucr.ac.cr')) {
-    error.value = 'Solo se permiten correos con dominio @ucr.ac.cr.'
-    return
-  }
-  loading.value = true
-  try {
-    const { data } = await authService.recuperar(correo.value)
-    contrasenaTemp.value = data.contrasenaTemp
-  } catch {
-    error.value = 'No se encontró una cuenta activa con ese correo.'
-  } finally {
-    loading.value = false
-  }
-}
 </script>

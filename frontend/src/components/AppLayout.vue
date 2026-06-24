@@ -271,9 +271,9 @@
       >
         <div
           v-if="notifAbierto"
-          class="fixed w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+          class="fixed w-84 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
           :style="notifDropdownStyle"
-          style="z-index: 9999"
+          style="z-index: 9999; width: 340px"
         >
           <!-- Cabecera -->
           <div class="bg-gradient-to-r from-[#003d7a] to-[#0066cc] px-5 py-4 flex items-center justify-between">
@@ -281,46 +281,82 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <h4 class="text-white font-semibold text-sm">Solicitudes de cambio</h4>
+              <h4 class="text-white font-semibold text-sm">Notificaciones</h4>
             </div>
-            <span v-if="notifCount > 0" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-              {{ notifCount }} pendiente{{ notifCount !== 1 ? 's' : '' }}
-            </span>
           </div>
 
-          <!-- Lista de items -->
-          <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
-            <div v-if="notifCargando" class="py-8 text-center text-sm text-gray-400">Cargando...</div>
-            <div v-else-if="notifItems.length === 0" class="py-8 text-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              <p class="text-sm text-gray-400">No hay solicitudes pendientes</p>
-            </div>
-            <div
-              v-for="item in notifItems"
-              :key="item.id"
-              @click="irASolicitudes"
-              class="px-4 py-3 hover:bg-blue-50/50 cursor-pointer transition-colors"
-            >
-              <div class="flex items-start gap-3">
-                <div class="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0"></div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-gray-800">
-                    <span class="font-mono text-[#003d7a]">{{ item.activoPlaca }}</span>
-                    <span class="text-gray-500 font-normal"> · {{ item.articuloActual }}</span>
-                  </p>
-                  <p class="text-xs text-gray-500 mt-0.5" v-if="auth.esGTI">
-                    Solicitado por {{ item.solicitanteNombre }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-0.5">{{ formatNotifFecha(item.fechaSolicitud) }}</p>
+          <div class="max-h-96 overflow-y-auto">
+
+            <!-- Sección: Notificaciones en tiempo real -->
+            <div v-if="notifStore.items.length > 0">
+              <div class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                Recientes
+              </div>
+              <div
+                v-for="(n, idx) in notifStore.items.slice(0, 8)"
+                :key="idx"
+                class="px-4 py-3 border-b border-gray-50 hover:bg-gray-50/60 transition-colors"
+              >
+                <div class="flex items-start gap-3">
+                  <!-- Ícono por tipo -->
+                  <div class="mt-0.5 w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    :class="n.tipo === 'cuenta_bloqueada' ? 'bg-red-100' : 'bg-amber-100'">
+                    <!-- solicitud_cambio -->
+                    <svg v-if="n.tipo === 'solicitud_cambio'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                    <!-- cuenta_bloqueada -->
+                    <svg v-else-if="n.tipo === 'cuenta_bloqueada'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800">{{ n.titulo }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5 leading-snug">{{ n.mensaje }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ formatNotifFecha(n.fecha) }}</p>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Sección: Solicitudes pendientes -->
+            <div v-if="auth.esGTI">
+              <div class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                <span>Solicitudes pendientes</span>
+                <span v-if="solicitudesPendientes > 0" class="bg-amber-100 text-amber-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{{ solicitudesPendientes }}</span>
+              </div>
+              <div v-if="notifCargando" class="py-6 text-center text-sm text-gray-400">Cargando...</div>
+              <div v-else-if="notifItems.length === 0" class="py-6 text-center">
+                <p class="text-sm text-gray-400">No hay solicitudes pendientes</p>
+              </div>
+              <div
+                v-for="item in notifItems"
+                :key="item.id"
+                @click="irASolicitudes"
+                class="px-4 py-3 hover:bg-blue-50/50 cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0"></div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800">
+                      <span class="font-mono text-[#003d7a]">{{ item.activoPlaca }}</span>
+                      <span class="text-gray-500 font-normal"> · {{ item.articuloActual }}</span>
+                    </p>
+                    <p class="text-xs text-gray-500 mt-0.5">Solicitado por {{ item.solicitanteNombre }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ formatNotifFecha(item.fechaSolicitud) }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Estado vacío total -->
+            <div v-if="notifStore.items.length === 0 && notifItems.length === 0 && !notifCargando"
+              class="py-10 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-200 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <p class="text-sm text-gray-400">No hay notificaciones</p>
             </div>
           </div>
 
           <!-- Pie -->
-          <div class="border-t border-gray-100 px-4 py-3 bg-gray-50/60">
+          <div v-if="auth.esGTI" class="border-t border-gray-100 px-4 py-3 bg-gray-50/60">
             <button @click="irASolicitudes"
               class="w-full text-sm text-[#0066cc] hover:text-[#003d7a] font-medium transition text-center">
               Ver todas las solicitudes →
@@ -462,6 +498,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificacionesStore } from '@/stores/notificaciones'
 import AppDialog from '@/components/AppDialog.vue'
 import sibiLogo from '@/assets/SIBI_logo_4096_fondo_oscuro.png'
 import activoService from '@/services/activoService'
@@ -469,6 +506,7 @@ import solicitudService from '@/services/solicitudService'
 import authService from '@/services/authService'
 
 const auth = useAuthStore()
+const notifStore = useNotificacionesStore()
 const router = useRouter()
 const route = useRoute()
 const perfilAbierto = ref(false)
@@ -479,7 +517,7 @@ const notifDropdownStyle = ref({})
 const notifItems = ref([])
 const notifCargando = ref(false)
 
-const notifCount = computed(() => solicitudesPendientes.value)
+const notifCount = computed(() => notifStore.noLeidas + solicitudesPendientes.value)
 const perfilBtn = ref(null)
 const dropdownStyle = ref({})
 
@@ -555,6 +593,7 @@ async function toggleNotif() {
     right: `${window.innerWidth - rect.right}px`
   }
   notifAbierto.value = true
+  notifStore.marcarLeidas()
   notifCargando.value = true
   notifItems.value = []
   try {
@@ -585,8 +624,12 @@ function formatNotifFecha(iso) {
 onMounted(() => {
   document.addEventListener('mousedown', onClickFuera)
   cargarPendientes()
+  if (auth.esGTI) notifStore.conectar(auth.token)
 })
-onBeforeUnmount(() => document.removeEventListener('mousedown', onClickFuera))
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onClickFuera)
+  notifStore.desconectar()
+})
 watch(() => route.path, cargarPendientes)
 
 const estadosBadge = {
@@ -644,7 +687,8 @@ const rolClases = {
 function rolClase(r) { return rolClases[r] || 'bg-gray-100 text-gray-800' }
 function rolDisplay(r) { return r === 'JefaAdministrativa' ? 'Jefa Administrativa' : r }
 
-function cerrarSesion() {
+async function cerrarSesion() {
+  await notifStore.desconectar()
   auth.logout()
   router.push('/')
 }

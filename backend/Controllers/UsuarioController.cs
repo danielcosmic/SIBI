@@ -21,7 +21,7 @@ public class UsuarioController : ControllerBase
     public async Task<IActionResult> Listar()
     {
         var usuarios = await _db.Usuarios
-            .Select(u => new UsuarioDto(u.Correo, u.Nombre, u.Permisos, u.Activo))
+            .Select(u => new UsuarioDto(u.Correo, u.Nombre, u.Permisos, u.Activo, u.IntentosFallidos))
             .ToListAsync();
         return Ok(usuarios);
     }
@@ -48,6 +48,21 @@ public class UsuarioController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(new { correo = request.Correo, contrasenaTemp = tempPassword });
+    }
+
+    [HttpPost("{correo}/desbloquear")]
+    public async Task<IActionResult> Desbloquear(string correo)
+    {
+        var usuario = await _db.Usuarios.FindAsync(correo);
+        if (usuario is null) return NotFound();
+
+        var tempPassword = GenerarContrasenaTemp();
+        usuario.Contrasena = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+        usuario.EsContrasenaTemporal = true;
+        usuario.IntentosFallidos = 0;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { correo = usuario.Correo, contrasenaTemp = tempPassword });
     }
 
     [HttpDelete("{correo}")]

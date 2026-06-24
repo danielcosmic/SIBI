@@ -104,7 +104,7 @@
           class="border rounded-xl p-4 hover:shadow-lg transition-all duration-300 cursor-pointer bg-gradient-to-br hover:scale-105"
           :class="categoriaSeleccionada?.id === cat.id
             ? 'border-[#0066cc] bg-gradient-to-br from-blue-100 to-blue-50 shadow-md ring-2 ring-[#0066cc]/30'
-            : 'border-blue-100/50 from-blue-50/30 to-white'"
+            : 'border-gray-200 from-blue-50/20 to-white shadow-sm'"
         >
           <p class="text-2xl mb-2 emoji-font">{{ cat.icono || defaultEmoji }}</p>
           <p class="font-semibold text-gray-800 text-sm">{{ cat.nombre }}</p>
@@ -143,19 +143,21 @@
 
           <div v-if="cargandoRecientes" class="py-6 text-center text-gray-400 text-sm">Cargando...</div>
           <div v-else-if="activosRecientes.length === 0" class="py-6 text-center text-gray-400 text-sm">No hay activos en esta categoría.</div>
-          <div v-else class="overflow-x-auto rounded-xl border border-blue-100/60">
+          <div v-else class="overflow-x-auto rounded-xl border border-blue-200">
             <table class="w-full text-sm">
-              <thead class="bg-blue-50/60">
+              <thead class="bg-[#003d7a]">
                 <tr>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Placa</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Artículo</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Marca / Modelo</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Ubicación</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Placa</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Artículo</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Marca / Modelo</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Ubicación</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Estado</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-blue-50">
-                <tr v-for="activo in activosRecientes" :key="activo.placa" class="hover:bg-blue-50/30 transition">
+              <tbody class="divide-y divide-gray-200">
+                <tr v-for="(activo, idx) in activosRecientes" :key="activo.placa"
+                  class="hover:bg-blue-50 transition"
+                  :class="idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
                   <td class="px-4 py-3 font-mono text-[#003d7a] font-medium">{{ activo.placa }}</td>
                   <td class="px-4 py-3 text-gray-800">{{ activo.articulo }}</td>
                   <td class="px-4 py-3 text-gray-600">{{ activo.marca }} {{ activo.modelo }}</td>
@@ -184,85 +186,89 @@
       <div v-if="actividad.length === 0" class="text-center py-8 text-gray-400">
         No hay actividad reciente.
       </div>
-      <div v-else class="space-y-1">
-        <template v-for="item in actividad" :key="item.id">
-          <div
-            @click="seleccionarActividad(item)"
-            class="flex items-start gap-4 p-3 rounded-xl transition-all duration-200 cursor-pointer"
-            :class="actividadSeleccionada?.id === item.id
-              ? 'bg-blue-50 ring-1 ring-[#0066cc]/20'
-              : 'hover:bg-blue-50/30'"
-          >
-            <div class="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-              :class="actividadSeleccionada?.id === item.id ? 'bg-[#003d7a]' : 'bg-[#0066cc]'" />
-            <div class="flex-1 min-w-0">
-              <p class="font-medium text-gray-800">{{ labelAccion(item.tipoAccion) }}</p>
-              <p class="text-sm text-gray-600">Placa: {{ item.activoPlaca }}</p>
-              <p class="text-xs text-gray-500 mt-1">
-                {{ item.usuarioNombre }} • {{ formatFecha(item.fechaHora) }}
-              </p>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 flex-shrink-0 mt-1 transition-transform duration-200"
-              :class="actividadSeleccionada?.id === item.id ? 'rotate-180 text-[#0066cc]' : ''"
-              fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-
-          <!-- Resumen del activo -->
-          <Transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 -translate-y-1"
-            enter-to-class="opacity-100 translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 translate-y-0"
-            leave-to-class="opacity-0 -translate-y-1"
-          >
-            <div v-if="actividadSeleccionada?.id === item.id" class="mx-3 mb-2 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50/60 to-white overflow-hidden">
-              <div v-if="cargandoDetalle" class="py-4 text-center text-sm text-gray-400">Cargando...</div>
-              <div v-else-if="activoDetalle" class="p-4">
-                <div class="flex items-start justify-between gap-2 mb-3">
-                  <div class="flex items-start gap-3 flex-1 min-w-0">
-                    <div>
-                      <p class="font-semibold text-[#003d7a] font-mono">{{ activoDetalle.placa }}</p>
-                      <p class="text-sm text-gray-700">{{ activoDetalle.articulo }}</p>
-                    </div>
-                    <div class="border-l border-blue-100 pl-3">
-                      <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Realizado por</p>
-                      <p class="font-semibold text-gray-800 text-sm">{{ actividadSeleccionada.usuarioNombre }}</p>
-                    </div>
-                  </div>
-                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
-                    :class="{
-                      'bg-green-100 text-green-700': activoDetalle.estado === 'Activo',
-                      'bg-yellow-100 text-yellow-700': activoDetalle.estado === 'Mantenimiento',
-                      'bg-red-100 text-red-700': activoDetalle.estado === 'Desecho'
-                    }">
-                    {{ activoDetalle.estado }}
-                  </span>
+      <div v-else class="rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-200">
+        <template v-for="(item, idx) in actividad" :key="item.id">
+          <div>
+            <div
+              @click="seleccionarActividad(item)"
+              class="flex items-center gap-3 px-4 py-3 border-l-4 cursor-pointer transition-all duration-200"
+              :class="[
+                accentAccion(item.tipoAccion),
+                actividadSeleccionada?.id === item.id
+                  ? 'bg-blue-50'
+                  : idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
+              ]"
+            >
+              <span class="text-base flex-shrink-0 w-6 text-center leading-none">{{ iconoAccion(item.tipoAccion) }}</span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-medium text-gray-900 text-sm leading-snug">{{ labelAccion(item.tipoAccion) }}</span>
+                  <span class="font-mono text-xs bg-blue-50 text-[#003d7a] border border-blue-100 px-1.5 py-0.5 rounded font-medium">{{ item.activoPlaca }}</span>
                 </div>
-                <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
-                  <div class="flex flex-col">
-                    <span class="text-gray-400 uppercase tracking-wide font-medium">Marca / Modelo</span>
-                    <span class="text-gray-700">{{ activoDetalle.marca }} {{ activoDetalle.modelo }}</span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-gray-400 uppercase tracking-wide font-medium">Categoría</span>
-                    <span class="text-gray-700">{{ activoDetalle.categoriaNombre }}</span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-gray-400 uppercase tracking-wide font-medium">Ubicación</span>
-                    <span class="text-gray-700">{{ activoDetalle.ubicacionActual }}</span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-gray-400 uppercase tracking-wide font-medium">Encargado</span>
-                    <span class="text-gray-700">{{ activoDetalle.encargadoActual }}</span>
-                  </div>
-                </div>
+                <p class="text-xs text-gray-500 mt-0.5 truncate">{{ item.usuarioNombre }} · {{ formatFecha(item.fechaHora) }}</p>
               </div>
-              <div v-else class="py-4 text-center text-sm text-gray-400">No se pudo cargar el activo.</div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="actividadSeleccionada?.id === item.id ? 'rotate-180 text-[#0066cc]' : ''"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
-          </Transition>
+
+            <!-- Resumen del activo -->
+            <Transition
+              enter-active-class="transition-all duration-200 ease-out"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition-all duration-150 ease-in"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1"
+            >
+              <div v-if="actividadSeleccionada?.id === item.id" class="mx-3 mb-2 rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+                <div v-if="cargandoDetalle" class="py-4 text-center text-sm text-gray-400">Cargando...</div>
+                <div v-else-if="activoDetalle" class="p-4">
+                  <div class="flex items-start justify-between gap-2 mb-3">
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                      <div>
+                        <p class="font-semibold text-[#003d7a] font-mono">{{ activoDetalle.placa }}</p>
+                        <p class="text-sm text-gray-700">{{ activoDetalle.articulo }}</p>
+                      </div>
+                      <div class="border-l border-blue-200 pl-3">
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Realizado por</p>
+                        <p class="font-semibold text-gray-800 text-sm">{{ actividadSeleccionada.usuarioNombre }}</p>
+                      </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
+                      :class="{
+                        'bg-green-100 text-green-700': activoDetalle.estado === 'Activo',
+                        'bg-yellow-100 text-yellow-700': activoDetalle.estado === 'Mantenimiento',
+                        'bg-red-100 text-red-700': activoDetalle.estado === 'Desecho'
+                      }">
+                      {{ activoDetalle.estado }}
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                    <div class="flex flex-col">
+                      <span class="text-gray-400 uppercase tracking-wide font-medium">Marca / Modelo</span>
+                      <span class="text-gray-700">{{ activoDetalle.marca }} {{ activoDetalle.modelo }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-400 uppercase tracking-wide font-medium">Categoría</span>
+                      <span class="text-gray-700">{{ activoDetalle.categoriaNombre }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-400 uppercase tracking-wide font-medium">Ubicación</span>
+                      <span class="text-gray-700">{{ activoDetalle.ubicacionActual }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-400 uppercase tracking-wide font-medium">Encargado</span>
+                      <span class="text-gray-700">{{ activoDetalle.encargadoActual }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="py-4 text-center text-sm text-gray-400">No se pudo cargar el activo.</div>
+              </div>
+            </Transition>
+          </div>
         </template>
       </div>
     </div>
@@ -363,9 +369,29 @@ const LABELS = {
   SolicitudRechazada: 'Solicitud de cambio rechazada'
 }
 
-function labelAccion(tipo) {
-  return LABELS[tipo] || tipo
+const ICONOS = {
+  Creacion: '✨', CambioUbicacion: '📍', CambioEncargado: '👤', CambioEstado: '🔄',
+  CambioPlaca: '🏷️', Eliminacion: '🗑️', Aprobacion: '✅', Rechazo: '❌',
+  SolicitudCambio: '📝', SolicitudAprobada: '✔️', SolicitudRechazada: '🚫'
 }
+
+const ACCENTS = {
+  Creacion: 'border-l-indigo-400',
+  CambioUbicacion: 'border-l-blue-400',
+  CambioEncargado: 'border-l-green-400',
+  CambioEstado: 'border-l-yellow-400',
+  CambioPlaca: 'border-l-purple-400',
+  Eliminacion: 'border-l-red-400',
+  Aprobacion: 'border-l-teal-400',
+  Rechazo: 'border-l-orange-400',
+  SolicitudCambio: 'border-l-amber-400',
+  SolicitudAprobada: 'border-l-green-500',
+  SolicitudRechazada: 'border-l-red-500'
+}
+
+function labelAccion(tipo) { return LABELS[tipo] || tipo }
+function iconoAccion(tipo) { return ICONOS[tipo] || '📋' }
+function accentAccion(tipo) { return ACCENTS[tipo] || 'border-l-gray-300' }
 
 function formatFecha(iso) {
   return new Date(iso).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' })

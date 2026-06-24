@@ -1,5 +1,6 @@
 using System.Text;
 using backend.Data;
+using backend.Hubs;
 using backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
+
+        // SignalR envía el token por query string en conexiones WebSocket
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -56,11 +72,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendVue", policy =>
         policy.WithOrigins("http://localhost:8080")
               .AllowAnyHeader()
-              .AllowAnyMethod()));
+              .AllowAnyMethod()
+              .AllowCredentials()));
 
+builder.Services.AddSignalR();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<HistorialService>();
-builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<NotificacionService>();
 
 var app = builder.Build();
 
@@ -75,4 +93,5 @@ app.UseCors("FrontendVue");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificacionHub>("/hubs/notificaciones");
 app.Run();

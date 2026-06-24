@@ -155,12 +155,124 @@ public class ActivoController : ControllerBase
         }
     }
 
+    [HttpPost("importar")]
+    [Authorize(Roles = "GTI,Administradora")]
+    public async Task<IActionResult> Importar([FromBody] List<ImportarActivoFilaRequest> filas)
+    {
+        var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var categoriasPorNombre = await _db.Categorias
+            .ToDictionaryAsync(c => c.Nombre.ToLower(), c => c.Id);
+
+        var todosEncargados = await _db.Encargados.ToListAsync();
+        var encargadosPorNombre = todosEncargados
+            .GroupBy(e => e.Nombre.ToLower())
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var resultados = new List<ImportarActivoResultadoDto>();
+
+        for (int i = 0; i < filas.Count; i++)
+        {
+            var fila = filas[i];
+            int numFila = i + 2;
+
+            if (string.IsNullOrWhiteSpace(fila.Placa))
+            {
+                resultados.Add(new ImportarActivoResultadoDto(numFila, "(vacía)", false, "La placa es obligatoria."));
+                continue;
+            }
+
+            if (await _db.Activos.AnyAsync(a => a.Placa == fila.Placa))
+            {
+                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, "Ya existe un activo con esa placa."));
+                continue;
+            }
+
+            if (!categoriasPorNombre.TryGetValue(fila.CategoriaNombre.ToLower(), out var categoriaId))
+            {
+                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Categoría '{fila.CategoriaNombre}' no encontrada."));
+                continue;
+            }
+
+            if (!encargadosPorNombre.TryGetValue(fila.EncargadoNombre.ToLower(), out var candidatos) || candidatos.Count == 0)
+            {
+                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Encargado '{fila.EncargadoNombre}' no encontrado."));
+                continue;
+            }
+
+            if (candidatos.Count > 1)
+            {
+                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Nombre '{fila.EncargadoNombre}' coincide con varios encargados. Use el nombre exacto."));
+                continue;
+            }
+
+            var encargadoId = candidatos[0].Id;
+
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                if (!await _db.Placas.AnyAsync(p => p.Numero == fila.Placa))
+                    _db.Placas.Add(new Placa { Numero = fila.Placa, Tipo = fila.TipoPlaca });
+
+                var ubicacion = new Ubicacion
+                {
+                    Actual = fila.UbicacionActual,
+                    Anterior = fila.UbicacionActual,
+                    EncargadoActualId = encargadoId,
+                    EncargadoAnteriorId = encargadoId
+                };
+                _db.Ubicaciones.Add(ubicacion);
+                await _db.SaveChangesAsync();
+
+                var activo = new Activo
+                {
+                    Placa = fila.Placa,
+                    Marca = fila.Marca,
+                    Modelo = fila.Modelo,
+                    NumSerial = fila.NumSerial,
+                    Articulo = fila.Articulo,
+                    CategoriaId = categoriaId,
+                    Observaciones = string.IsNullOrWhiteSpace(fila.Observaciones) ? null : fila.Observaciones,
+                    UbicacionId = ubicacion.Id,
+                    Estado = "Activo"
+                };
+                _db.Activos.Add(activo);
+                await _db.SaveChangesAsync();
+
+                await _historial.RegistrarAsync(activo.Placa, correo, "Creacion",
+                    $"{activo.Marca} {activo.Modelo} agregado al inventario (importación masiva).");
+
+                await tx.CommitAsync();
+                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, true, null));
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                var detalle = ex.InnerException?.Message ?? ex.Message;
+                string mensaje;
+                if (detalle.Contains("CHK_Placa_Tipo"))
+                    mensaje = "Tipo de placa inválido. Use 'Institucional' o 'Interno'.";
+                else if (detalle.Contains("PRIMARY KEY") || detalle.Contains("UNIQUE") || detalle.Contains("duplicate"))
+                    mensaje = "Ya existe un registro con esa placa.";
+                else if (detalle.Contains("FOREIGN KEY") || detalle.Contains("FK_"))
+                    mensaje = "Referencia inválida: algún valor no existe en el sistema.";
+                else if (detalle.Contains("NOT NULL") || detalle.Contains("cannot be null"))
+                    mensaje = "Faltan campos obligatorios en esta fila.";
+                else
+                    mensaje = "No se pudo crear el activo. Verifique los datos de esta fila.";
+                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, mensaje));
+            }
+        }
+
+        return Ok(resultados);
+    }
+
     [HttpPut("{placa}")]
     [Authorize(Roles = "GTI,Administradora")]
     public async Task<IActionResult> Editar(string placa, [FromBody] EditarActivoRequest request)
     {
         var activo = await _db.Activos
-            .Include(a => a.UbicacionNavigation)
+            .Include(a => a.UbicacionNavigation).ThenInclude(u => u.EncargadoActual)
             .FirstOrDefaultAsync(a => a.Placa == placa);
 
         if (activo is null) return NotFound();
@@ -175,6 +287,9 @@ public class ActivoController : ControllerBase
 
         if (ubicacionCambiada || encargadoCambiado)
         {
+            var ubicacionAnterior = activo.UbicacionNavigation.Actual;
+            var encargadoAnteriorNombre = activo.UbicacionNavigation.EncargadoActual.Nombre;
+
             var nuevaUbicacion = new Ubicacion
             {
                 Actual = request.UbicacionActual,
@@ -188,10 +303,10 @@ public class ActivoController : ControllerBase
 
             if (ubicacionCambiada)
                 await _historial.RegistrarAsync(placa, correo, "CambioUbicacion",
-                    $"Ubicación cambiada a {request.UbicacionActual}.");
+                    $"Ubicación: {ubicacionAnterior} -> {request.UbicacionActual}");
             if (encargadoCambiado)
                 await _historial.RegistrarAsync(placa, correo, "CambioEncargado",
-                    $"Encargado cambiado a {encargado.Nombre}.");
+                    $"Encargado: {encargadoAnteriorNombre} -> {encargado.Nombre}");
         }
 
         if (activo.Estado != request.Estado)

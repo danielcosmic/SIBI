@@ -42,7 +42,7 @@
         class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border cursor-pointer"
         :class="panelCat?.id === cat.id
           ? 'border-[#0066cc] ring-2 ring-[#0066cc]/30 scale-105 shadow-blue-200/60 shadow-xl'
-          : 'border-blue-100/50 bg-gradient-to-br from-blue-50/30 to-white hover:scale-105'"
+          : 'border-gray-200 hover:border-blue-300 hover:shadow-md hover:scale-105'"
       >
         <div class="flex items-start justify-between">
           <div class="flex items-center gap-3">
@@ -68,7 +68,7 @@
 
     <!-- Panel de activos de la categoría seleccionada -->
     <Transition name="panel-slide">
-      <div v-if="panelCat" class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-blue-100/50">
+      <div v-if="panelCat" class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-200">
 
         <!-- Encabezado del panel -->
         <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] text-white px-6 py-4 flex items-center justify-between">
@@ -103,14 +103,14 @@
         <!-- Tabla (mismo estilo que Inventario) -->
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gradient-to-r from-blue-50/50 to-blue-100/30 border-b border-blue-100/50">
+            <thead class="bg-[#003d7a]">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Placa</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Artículo</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Marca / Modelo</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ubicación</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Encargado</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Placa</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Artículo</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Marca / Modelo</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ubicación</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Encargado</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -123,10 +123,11 @@
                 </td>
               </tr>
               <tr
-                v-for="activo in panelActivosFiltrados"
+                v-for="(activo, idx) in panelActivosFiltrados"
                 :key="activo.placa"
                 @click="abrirActivo(activo)"
-                class="hover:bg-blue-50/30 transition-all duration-200 cursor-pointer"
+                class="hover:bg-blue-50 transition-all duration-200 cursor-pointer"
+                :class="idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex flex-col">
@@ -154,7 +155,7 @@
         </div>
 
         <!-- Footer con conteo -->
-        <div v-if="!panelCargando && panelActivos.length > 0" class="bg-gradient-to-r from-gray-50 to-blue-50/30 px-6 py-3 border-t border-blue-100/50">
+        <div v-if="!panelCargando && panelActivos.length > 0" class="bg-gray-50 px-6 py-3 border-t border-gray-200">
           <p class="text-sm text-gray-500">
             Mostrando <span class="font-medium text-gray-700">{{ panelActivosFiltrados.length }}</span>
             de <span class="font-medium text-gray-700">{{ panelActivos.length }}</span> activos

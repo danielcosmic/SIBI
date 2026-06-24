@@ -17,11 +17,13 @@ public class SolicitudCambioController : ControllerBase
 {
     private readonly SibiDbContext _db;
     private readonly HistorialService _historial;
+    private readonly NotificacionService _notif;
 
-    public SolicitudCambioController(SibiDbContext db, HistorialService historial)
+    public SolicitudCambioController(SibiDbContext db, HistorialService historial, NotificacionService notif)
     {
         _db = db;
         _historial = historial;
+        _notif = notif;
     }
 
     [HttpGet]
@@ -121,8 +123,12 @@ public class SolicitudCambioController : ControllerBase
 
         _db.SolicitudesCambio.Add(solicitud);
         await _db.SaveChangesAsync();
+
+        var nombreSolicitante = User.FindFirstValue(ClaimTypes.Name);
         await _historial.RegistrarAsync(request.ActivoPlaca, correo, "SolicitudCambio",
-            $"Solicitud de cambio enviada por {User.FindFirstValue(ClaimTypes.Name)}.");
+            $"Solicitud de cambio enviada por {nombreSolicitante}.");
+        await _notif.NotificarGTIAdminAsync("solicitud_cambio", "Nueva solicitud de cambio",
+            $"{nombreSolicitante} solicitó cambios en el activo {request.ActivoPlaca}.");
 
         return Ok(new { id = solicitud.Id });
     }

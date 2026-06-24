@@ -20,5 +20,8 @@ export default {
     api.delete(`/activo/${placa}`),
 
   recientes: (categoriaId, tamano = 5) =>
-    api.get('/activo/recientes', { params: { categoriaId, tamano } })
+    api.get('/activo/recientes', { params: { categoriaId, tamano } }),
+
+  importar: (filas) =>
+    api.post('/activo/importar', filas)
 }

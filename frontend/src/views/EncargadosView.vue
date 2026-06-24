@@ -45,8 +45,8 @@
         @click="seleccionarEncargado(e)"
         class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg p-5 border cursor-pointer transition-all duration-200 hover:scale-[1.02]"
         :class="encargadoSeleccionado?.id === e.id
-          ? 'border-[#0066cc] ring-2 ring-[#0066cc]/20 shadow-blue-100'
-          : 'border-blue-100/50 hover:border-blue-200'"
+          ? 'border-[#0066cc] ring-2 ring-[#0066cc]/30 shadow-lg shadow-blue-100'
+          : 'border-gray-200 hover:border-blue-300 hover:shadow-md'"
       >
         <div class="flex items-start gap-4">
           <!-- Avatar con iniciales -->
@@ -83,7 +83,7 @@
 
     <!-- Panel expandible de activos (debajo del grid) -->
     <Transition name="panel-slide">
-      <div v-if="encargadoSeleccionado" class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-blue-100/50">
+      <div v-if="encargadoSeleccionado" class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-200">
         <!-- Cabecera del panel -->
         <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] text-white px-6 py-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -129,21 +129,23 @@
         <div v-else-if="activosDelEncargado.length === 0" class="py-10 text-center text-gray-400 text-sm">Este encargado no tiene activos asignados.</div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-gradient-to-r from-blue-50/50 to-blue-100/30 border-b border-blue-100/50">
+            <thead class="bg-[#003d7a] border-b-2 border-[#002d5a]">
               <tr>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Placa</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Artículo</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Marca / Modelo</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Ubicación</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Placa</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Artículo</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Marca / Modelo</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Ubicación</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
-              <tr v-for="activo in activosDelEncargado" :key="activo.placa" class="hover:bg-blue-50/20 transition">
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="(activo, idx) in activosDelEncargado" :key="activo.placa"
+                class="transition-colors duration-150"
+                :class="idx % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50'">
                 <td class="px-6 py-3 font-mono text-[#003d7a] font-medium">{{ activo.placa }}</td>
                 <td class="px-6 py-3 text-gray-800">{{ activo.articulo }}</td>
-                <td class="px-6 py-3 text-gray-600">{{ activo.marca }} {{ activo.modelo }}</td>
-                <td class="px-6 py-3 text-gray-600">{{ activo.ubicacionActual }}</td>
+                <td class="px-6 py-3 text-gray-700">{{ activo.marca }} {{ activo.modelo }}</td>
+                <td class="px-6 py-3 text-gray-700">{{ activo.ubicacionActual }}</td>
                 <td class="px-6 py-3">
                   <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                     :class="{
@@ -288,7 +290,7 @@
               </div>
               <div v-else class="rounded-xl border border-gray-200 overflow-hidden">
                 <table class="w-full text-sm">
-                  <thead class="bg-gray-50">
+                  <thead class="bg-[#003d7a]">
                     <tr>
                       <th class="px-4 py-2.5 w-10">
                         <input
@@ -296,22 +298,24 @@
                           :checked="todosSeleccionados"
                           :indeterminate="seleccionados.length > 0 && !todosSeleccionados"
                           @change="toggleTodos"
-                          class="rounded border-gray-300 text-[#0066cc] focus:ring-[#0066cc] cursor-pointer"
+                          class="rounded border-white/50 text-white focus:ring-white cursor-pointer"
                         />
                       </th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Placa</th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Artículo</th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Marca / Modelo</th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Placa</th>
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Artículo</th>
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Marca / Modelo</th>
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Estado</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-100">
+                  <tbody class="divide-y divide-gray-200">
                     <tr
-                      v-for="activo in activosEditar"
+                      v-for="(activo, idx) in activosEditar"
                       :key="activo.placa"
                       @click="toggleSeleccion(activo.placa)"
-                      class="hover:bg-blue-50/30 transition cursor-pointer"
-                      :class="seleccionados.includes(activo.placa) ? 'bg-blue-50/50' : ''"
+                      class="transition cursor-pointer"
+                      :class="seleccionados.includes(activo.placa)
+                        ? 'bg-blue-100 hover:bg-blue-100'
+                        : idx % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50'"
                     >
                       <td class="px-4 py-3" @click.stop>
                         <input

@@ -6,7 +6,7 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 bg-white/90 backdrop-blur-sm rounded-xl p-1 border border-blue-100/50 shadow-sm w-fit">
+    <div class="flex gap-1 bg-white rounded-xl p-1 border border-gray-200 shadow-sm w-fit">
       <button
         v-for="tab in tabs"
         :key="tab.value"
@@ -27,7 +27,7 @@
     <!-- Estado vacío -->
     <div v-if="cargando" class="text-center py-16 text-gray-400">Cargando...</div>
     <div v-else-if="solicitudes.length === 0"
-      class="bg-white/90 rounded-2xl shadow-lg border border-blue-100/50 px-8 py-16 text-center">
+      class="bg-white rounded-2xl shadow-lg border border-gray-200 px-8 py-16 text-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
       </svg>
@@ -39,11 +39,11 @@
     <!-- Lista -->
     <div v-else class="space-y-4">
       <div v-for="s in solicitudes" :key="s.id"
-        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border overflow-hidden"
+        class="bg-white rounded-2xl shadow-md border overflow-hidden"
         :class="estadoBorde(s.estado)">
 
         <!-- Cabecera -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50/60">
           <div class="flex items-center gap-3">
             <div>
               <span class="font-bold text-[#003d7a] font-mono">{{ s.activoPlaca }}</span>
@@ -161,9 +161,9 @@ const estadoBadges = {
   Rechazada: 'bg-red-100 text-red-700'
 }
 const estadoBordes = {
-  Pendiente: 'border-amber-200/60',
-  Aprobada:  'border-green-200/60',
-  Rechazada: 'border-red-200/60'
+  Pendiente: 'border-amber-300',
+  Aprobada:  'border-green-300',
+  Rechazada: 'border-red-300'
 }
 function estadoBadge(e) { return estadoBadges[e] || 'bg-gray-100 text-gray-600' }
 function estadoBorde(e) { return estadoBordes[e] || 'border-blue-100/50' }

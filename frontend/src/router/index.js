@@ -34,6 +34,11 @@ const routes = [
         component: () => import('@/views/InventarioView.vue')
       },
       {
+        path: 'activo/:placa',
+        name: 'ActivoDetalle',
+        component: () => import('@/views/ActivoDetalleView.vue')
+      },
+      {
         path: 'encargados',
         name: 'Encargados',
         component: () => import('@/views/EncargadosView.vue'),

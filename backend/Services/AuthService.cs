@@ -14,11 +14,13 @@ public class AuthService
 {
     private readonly SibiDbContext _db;
     private readonly IConfiguration _config;
+    private readonly NotificacionService _notif;
 
-    public AuthService(SibiDbContext db, IConfiguration config)
+    public AuthService(SibiDbContext db, IConfiguration config, NotificacionService notif)
     {
         _db = db;
         _config = config;
+        _notif = notif;
     }
 
     public async Task<LoginResponse?> LoginAsync(string correo, string contrasena)
@@ -34,6 +36,10 @@ public class AuthService
         {
             usuario.IntentosFallidos++;
             await _db.SaveChangesAsync();
+            if (usuario.IntentosFallidos == 3)
+                await _notif.NotificarAdminAsync("cuenta_bloqueada",
+                    "Cuenta bloqueada",
+                    $"La cuenta de {usuario.Nombre} ({usuario.Correo}) fue bloqueada tras 3 intentos fallidos de contraseña.");
             return null;
         }
 

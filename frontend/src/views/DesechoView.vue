@@ -55,7 +55,7 @@
       <div
         v-for="item in itemsFiltrados"
         :key="item.activo.placa"
-        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-red-100/50 bg-gradient-to-r from-red-50/30 to-white"
+        class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 border border-red-200 border-l-4 border-l-red-400 p-6"
       >
         <div class="flex flex-col lg:flex-row gap-6">
           <div class="flex-1">

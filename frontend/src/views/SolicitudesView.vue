@@ -38,10 +38,10 @@
       <div
         v-for="s in solicitudes"
         :key="s.id"
-        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-blue-100/50 overflow-hidden"
+        class="bg-white rounded-2xl shadow-md border border-blue-200 overflow-hidden"
       >
         <!-- Cabecera de la tarjeta -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-transparent">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-blue-50/60">
           <div class="flex items-center gap-4">
             <div>
               <span class="font-bold text-[#003d7a] font-mono text-lg">{{ s.activoPlaca }}</span>
@@ -87,7 +87,7 @@
           </div>
 
           <!-- Campos extra -->
-          <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-3">
+          <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-3">
             <div class="flex items-baseline gap-2">
               <span class="text-xs text-gray-400 w-20 flex-shrink-0">N° Serial</span>
               <span class="text-sm text-gray-700">{{ s.datosNuevos.numSerial || '—' }}</span>

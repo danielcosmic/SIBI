@@ -13,6 +13,12 @@ module.exports = defineConfig({
         target: 'http://localhost:5025',
         secure: false,
         changeOrigin: true
+      },
+      '/hubs': {
+        target: 'http://localhost:5025',
+        secure: false,
+        changeOrigin: true,
+        ws: true
       }
     }
   }

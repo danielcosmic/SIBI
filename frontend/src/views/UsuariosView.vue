@@ -12,20 +12,23 @@
     </div>
 
     <!-- Tabla -->
-    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-blue-100/50">
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-200">
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-gradient-to-r from-blue-50/50 to-blue-100/30 border-b border-blue-100/50">
+          <thead class="bg-[#003d7a] border-b-2 border-[#002d5a]">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Usuario</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Rol</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
+              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Usuario</th>
+              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Rol</th>
+              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
+              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-if="loading"><td colspan="4" class="px-6 py-10 text-center text-gray-400">Cargando...</td></tr>
-            <tr v-for="u in usuarios" :key="u.correo" class="hover:bg-blue-50/20 transition-all duration-200">
+            <tr v-for="(u, idx) in usuarios" :key="u.correo"
+              class="transition-colors duration-150"
+              :class="idx % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50'"
+            >
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 bg-[#003d7a] rounded-full flex items-center justify-center">
@@ -41,12 +44,25 @@
                 <span class="px-3 py-1 rounded-full text-xs font-medium" :class="rolClase(u.permisos)">{{ rolDisplay(u.permisos) }}</span>
               </td>
               <td class="px-6 py-4">
-                <span class="px-3 py-1 rounded-full text-xs font-medium" :class="u.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                  {{ u.activo ? 'Activo' : 'Inactivo' }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="px-3 py-1 rounded-full text-xs font-medium" :class="u.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                    {{ u.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                  <span v-if="u.intentosFallidos >= 3" class="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    Bloqueado
+                  </span>
+                </div>
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center gap-1">
+                  <button
+                    v-if="u.intentosFallidos >= 3"
+                    @click="desbloquearUsuario(u)"
+                    class="p-2 text-orange-500 hover:bg-orange-50 rounded transition"
+                    title="Desbloquear cuenta"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 018 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                  </button>
                   <button @click="editarUsuario(u)" class="p-2 text-green-600 hover:bg-green-50 rounded transition" title="Editar">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                   </button>
@@ -167,12 +183,67 @@
             </div>
           </div>
           <div class="flex gap-3 pt-2">
-            <button type="button" @click="cerrarModal" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">Cancelar</button>
-            <button type="submit" :disabled="formLoading" class="flex-1 px-4 py-2 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium disabled:bg-gray-400">
+            <button type="button" @click="cerrarModal" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">{{ contrasenaTemp ? 'Cerrar' : 'Cancelar' }}</button>
+            <button v-if="!contrasenaTemp" type="submit" :disabled="formLoading" class="flex-1 px-4 py-2 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium disabled:bg-gray-400">
               {{ formLoading ? 'Guardando...' : editando ? 'Guardar' : 'Crear' }}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+    </Teleport>
+
+    <!-- Modal desbloqueo -->
+    <Teleport to="body">
+    <div v-if="mostrarModalDesbloqueo" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+        <div class="bg-orange-500 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 018 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+            <h2 class="text-xl font-bold">Cuenta Desbloqueada</h2>
+          </div>
+          <button @click="cerrarModalDesbloqueo" class="p-1 hover:bg-white/10 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-600">La cuenta fue desbloqueada y se generó una contraseña temporal. Entrégala al usuario para que pueda ingresar.</p>
+          <div class="rounded-xl border border-[#c7dff7] overflow-hidden">
+            <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] px-4 py-2.5 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+              <p class="text-white text-sm font-medium">Nuevas credenciales de acceso</p>
+            </div>
+            <div class="bg-[#f0f6ff] p-4 space-y-3">
+              <div>
+                <p class="text-xs text-gray-500 mb-0.5">Correo</p>
+                <p class="text-sm font-medium text-gray-800">{{ desbloqueoData.correo }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 mb-0.5">Contraseña temporal</p>
+                <p class="text-2xl font-mono font-bold text-[#003d7a] tracking-widest">{{ desbloqueoData.contrasenaTemp }}</p>
+              </div>
+              <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                El usuario deberá cambiar esta contraseña en su primer ingreso al sistema.
+              </p>
+              <button
+                type="button"
+                @click="copiarDesbloqueo"
+                class="w-full flex items-center justify-center gap-2 py-2 rounded-lg border transition text-sm font-medium"
+                :class="copiadoDesbloqueo
+                  ? 'bg-green-50 border-green-300 text-green-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'"
+              >
+                <svg v-if="!copiadoDesbloqueo" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                {{ copiadoDesbloqueo ? 'Credenciales copiadas' : 'Copiar credenciales' }}
+              </button>
+            </div>
+          </div>
+          <button @click="cerrarModalDesbloqueo"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
     </Teleport>
@@ -199,6 +270,10 @@ const formError = ref('')
 const formLoading = ref(false)
 const form = ref({ nombre: '', correo: '', permisos: 'Invitado', activo: true })
 
+const mostrarModalDesbloqueo = ref(false)
+const desbloqueoData = ref({ correo: '', nombre: '', contrasenaTemp: '' })
+const copiadoDesbloqueo = ref(false)
+
 onMounted(cargar)
 
 async function cargar() {
@@ -216,13 +291,35 @@ function editarUsuario(u) {
   mostrarModal.value = true
 }
 
-function cerrarModal() {
+async function cerrarModal() {
+  if (contrasenaTemp.value) {
+    const confirmado = await dialog.confirm({
+      type: 'warning',
+      title: '¿Ya guardó las credenciales?',
+      message: 'Una vez que cierre este recuadro, la contraseña temporal <strong>no podrá verse nuevamente</strong>. Asegúrese de haberla anotado o copiado antes de continuar.',
+      confirmText: 'Sí, cerrar',
+      cancelText: 'Volver'
+    })
+    if (!confirmado) return
+  }
   mostrarModal.value = false
   editando.value = null
   contrasenaTemp.value = ''
   copiado.value = false
   formError.value = ''
   form.value = { nombre: '', correo: '', permisos: 'Invitado', activo: true }
+}
+
+async function cerrarModalDesbloqueo() {
+  const confirmado = await dialog.confirm({
+    type: 'warning',
+    title: '¿Ya guardó las credenciales?',
+    message: 'Una vez que cierre este recuadro, la contraseña temporal <strong>no podrá verse nuevamente</strong>. Asegúrese de haberla anotado o copiado antes de continuar.',
+    confirmText: 'Sí, cerrar',
+    cancelText: 'Volver'
+  })
+  if (!confirmado) return
+  mostrarModalDesbloqueo.value = false
 }
 
 async function guardarUsuario() {
@@ -271,6 +368,29 @@ async function copiarCredenciales() {
   await navigator.clipboard.writeText(texto)
   copiado.value = true
   setTimeout(() => { copiado.value = false }, 3000)
+}
+
+async function desbloquearUsuario(u) {
+  try {
+    const { data } = await usuarioService.desbloquear(u.correo)
+    desbloqueoData.value = { correo: data.correo, nombre: u.nombre, contrasenaTemp: data.contrasenaTemp }
+    copiadoDesbloqueo.value = false
+    mostrarModalDesbloqueo.value = true
+    await cargar()
+  } catch (e) {
+    await dialog.alert({
+      type: 'danger',
+      title: 'No se pudo desbloquear',
+      message: e.response?.data?.mensaje || 'Ocurrió un error al desbloquear la cuenta.'
+    })
+  }
+}
+
+async function copiarDesbloqueo() {
+  const texto = `Correo: ${desbloqueoData.value.correo}\nContraseña temporal: ${desbloqueoData.value.contrasenaTemp}\n\nAl ingresar por primera vez, el sistema le pedirá establecer una nueva contraseña.`
+  await navigator.clipboard.writeText(texto)
+  copiadoDesbloqueo.value = true
+  setTimeout(() => { copiadoDesbloqueo.value = false }, 3000)
 }
 
 const rolClases = { Administradora: 'bg-purple-100 text-purple-800', GTI: 'bg-blue-100 text-blue-800', JefaAdministrativa: 'bg-green-100 text-green-800', Invitado: 'bg-gray-100 text-gray-800' }
