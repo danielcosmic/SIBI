@@ -185,7 +185,7 @@
           <template v-else-if="activoDetalle">
             <!-- Identificación -->
             <div class="rounded-xl border border-gray-200 overflow-hidden">
-              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Identificación</p>
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Identificación</p>
               <div class="grid grid-cols-2 gap-3 p-4">
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-400 mb-0.5">Placa</p>
@@ -216,7 +216,7 @@
 
             <!-- Clasificación -->
             <div class="rounded-xl border border-gray-200 overflow-hidden">
-              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Clasificación</p>
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Clasificación</p>
               <div class="grid grid-cols-2 gap-3 p-4">
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-400 mb-0.5">Categoría</p>
@@ -242,7 +242,7 @@
 
             <!-- Ubicación -->
             <div class="rounded-xl border border-gray-200 overflow-hidden">
-              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Ubicación</p>
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Ubicación</p>
               <div class="grid grid-cols-2 gap-3 p-4">
                 <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                   <p class="text-xs text-blue-500 mb-0.5">Ubicación Actual</p>
@@ -257,7 +257,7 @@
 
             <!-- Encargados -->
             <div class="rounded-xl border border-gray-200 overflow-hidden">
-              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Encargados</p>
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Encargados</p>
               <div class="grid grid-cols-2 gap-3 p-4">
                 <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                   <p class="text-xs text-blue-500 mb-0.5">Encargado Actual</p>
@@ -272,7 +272,7 @@
 
             <!-- Observaciones -->
             <div v-if="activoDetalle.observaciones" class="rounded-xl border border-gray-200 overflow-hidden">
-              <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Observaciones</p>
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Observaciones</p>
               <div class="p-4 bg-gray-50">
                 <p class="text-sm text-gray-700">{{ activoDetalle.observaciones }}</p>
               </div>

@@ -65,8 +65,9 @@ public class ActivoController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> Stats()
     {
-        var totalActivos = await _db.Activos.CountAsync(a => a.Estado != "Desecho");
+        var totalActivos = await _db.Activos.CountAsync(a => a.Estado == "Activo");
         var enDesecho = await _db.Activos.CountAsync(a => a.Estado == "Desecho");
+        var enMantenimiento = await _db.Activos.CountAsync(a => a.Estado == "Mantenimiento");
 
         var categorias = await _db.Categorias.ToListAsync();
         var conteosPorCategoria = await _db.Activos
@@ -82,7 +83,7 @@ public class ActivoController : ControllerBase
             conteosPorCategoria.FirstOrDefault(x => x.CategoriaId == c.Id)?.Cantidad ?? 0
         )).ToList();
 
-        return Ok(new ActivoStatsDto(totalActivos, enDesecho, 0, porCategoria));
+        return Ok(new ActivoStatsDto(totalActivos, enDesecho, enMantenimiento, 0, porCategoria));
     }
 
     [HttpGet("{placa}")]
@@ -194,21 +195,33 @@ public class ActivoController : ControllerBase
                 continue;
             }
 
-            if (!encargadosPorNombre.TryGetValue(fila.EncargadoNombre.ToLower(), out var candidatos) || candidatos.Count == 0)
+            Guid encargadoId;
+            if (fila.EncargadoId.HasValue)
             {
-                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Encargado '{fila.EncargadoNombre}' no encontrado."));
-                continue;
+                if (!await _db.Encargados.AnyAsync(e => e.Id == fila.EncargadoId.Value))
+                {
+                    resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, "El encargado seleccionado ya no existe en el sistema."));
+                    continue;
+                }
+                encargadoId = fila.EncargadoId.Value;
+            }
+            else
+            {
+                if (!encargadosPorNombre.TryGetValue(fila.EncargadoNombre.ToLower(), out var candidatos) || candidatos.Count == 0)
+                {
+                    resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Encargado '{fila.EncargadoNombre}' no encontrado."));
+                    continue;
+                }
+                if (candidatos.Count > 1)
+                {
+                    resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Nombre '{fila.EncargadoNombre}' coincide con varios encargados en el sistema."));
+                    continue;
+                }
+                encargadoId = candidatos[0].Id;
             }
 
-            if (candidatos.Count > 1)
-            {
-                resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, $"Nombre '{fila.EncargadoNombre}' coincide con varios encargados. Use el nombre exacto."));
-                continue;
-            }
-
-            var encargadoId = candidatos[0].Id;
-
-            await using var tx = await _db.Database.BeginTransactionAsync();
+            string? activoDescripcion = null;
+            var tx = await _db.Database.BeginTransactionAsync();
             try
             {
                 if (!await _db.Placas.AnyAsync(p => p.Numero == fila.Placa))
@@ -239,28 +252,83 @@ public class ActivoController : ControllerBase
                 _db.Activos.Add(activo);
                 await _db.SaveChangesAsync();
 
-                await _historial.RegistrarAsync(activo.Placa, correo, "Creacion",
-                    $"{activo.Marca} {activo.Modelo} agregado al inventario (importación masiva).");
-
+                activoDescripcion = $"{activo.Marca} {activo.Modelo}";
                 await tx.CommitAsync();
                 resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, true, null));
             }
             catch (Exception ex)
             {
                 await tx.RollbackAsync();
+                // Detach only entities in Added/Modified state to avoid polluting subsequent iterations.
+                foreach (var entry in _db.ChangeTracker.Entries()
+                    .Where(e => e.State is EntityState.Added or EntityState.Modified)
+                    .ToList())
+                    entry.State = EntityState.Detached;
                 var detalle = ex.InnerException?.Message ?? ex.Message;
                 string mensaje;
                 if (detalle.Contains("CHK_Placa_Tipo"))
-                    mensaje = "Tipo de placa inválido. Use 'Institucional' o 'Interno'.";
-                else if (detalle.Contains("PRIMARY KEY") || detalle.Contains("UNIQUE") || detalle.Contains("duplicate"))
-                    mensaje = "Ya existe un registro con esa placa.";
+                    mensaje = "El tipo de placa no es válido. Use 'Institucional' o 'Interno'.";
+                else if (detalle.Contains("NumSerial") && (detalle.Contains("UNIQUE") || detalle.Contains("duplicate")))
+                    mensaje = "El número de serie ya está registrado en otro activo.";
+                else if (detalle.Contains("PRIMARY KEY") || (detalle.Contains("UNIQUE") && detalle.Contains("Placa")) || detalle.Contains("duplicate key"))
+                    mensaje = "La placa ya existe en el inventario.";
+                else if (detalle.Contains("UNIQUE") || detalle.Contains("duplicate"))
+                    mensaje = "Un campo único (placa o número de serie) está duplicado.";
+                else if (detalle.Contains("FK_Activos_Categorias") || detalle.Contains("CategoriaId"))
+                    mensaje = "La categoría indicada no existe en el sistema.";
+                else if (detalle.Contains("FK_") && (detalle.Contains("Encargado") || detalle.Contains("Ubicacion")))
+                    mensaje = "El encargado o ubicación indicado no existe en el sistema.";
                 else if (detalle.Contains("FOREIGN KEY") || detalle.Contains("FK_"))
-                    mensaje = "Referencia inválida: algún valor no existe en el sistema.";
+                    mensaje = "Un valor referenciado (categoría, encargado o ubicación) no existe en el sistema.";
+                else if (detalle.Contains("String or binary data would be truncated") || detalle.Contains("truncat"))
+                {
+                    var matchCol = System.Text.RegularExpressions.Regex.Match(detalle, @"column '(\w+)'");
+                    if (matchCol.Success)
+                    {
+                        var colEsp = matchCol.Groups[1].Value switch
+                        {
+                            "Marca"         => "Marca",
+                            "Modelo"        => "Modelo",
+                            "NumSerial"     => "N° Serial",
+                            "Articulo"      => "Artículo",
+                            "Observaciones" => "Observaciones",
+                            "Actual"        => "Ubicación actual",
+                            "Anterior"      => "Ubicación anterior",
+                            var c           => c
+                        };
+                        mensaje = $"El campo '{colEsp}' excede la longitud máxima permitida.";
+                    }
+                    else
+                        mensaje = "Uno de los campos de texto excede la longitud máxima permitida.";
+                }
                 else if (detalle.Contains("NOT NULL") || detalle.Contains("cannot be null"))
-                    mensaje = "Faltan campos obligatorios en esta fila.";
+                    mensaje = "Faltan campos obligatorios.";
                 else
-                    mensaje = "No se pudo crear el activo. Verifique los datos de esta fila.";
+                    mensaje = "Error al guardar el activo. Revise que los datos sean válidos y no existan duplicados.";
                 resultados.Add(new ImportarActivoResultadoDto(numFila, fila.Placa, false, mensaje));
+            }
+            finally
+            {
+                // Dispose the transaction before registering historial so the DbContext
+                // has no active transaction when HistorialService calls SaveChangesAsync.
+                await tx.DisposeAsync();
+            }
+
+            if (activoDescripcion is not null)
+            {
+                try
+                {
+                    await _historial.RegistrarAsync(fila.Placa, correo, "Creacion",
+                        $"{activoDescripcion} agregado al inventario (importación masiva).");
+                }
+                catch { /* Historial is best-effort; import already committed. */ }
+                finally
+                {
+                    // Detach any Historial entities so a failed save doesn't leak into the
+                    // next iteration's SaveChangesAsync inside the activo transaction.
+                    foreach (var e in _db.ChangeTracker.Entries<Historial>().ToList())
+                        e.State = EntityState.Detached;
+                }
             }
         }
 

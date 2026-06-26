@@ -129,13 +129,13 @@
         <div v-else-if="activosDelEncargado.length === 0" class="py-10 text-center text-gray-400 text-sm">Este encargado no tiene activos asignados.</div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-[#003d7a] border-b-2 border-[#002d5a]">
+            <thead class="bg-blue-100 border-b border-blue-200">
               <tr>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Placa</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Artículo</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Marca / Modelo</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Ubicación</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
+                <th class="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Placa</th>
+                <th class="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Artículo</th>
+                <th class="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Marca / Modelo</th>
+                <th class="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Ubicación</th>
+                <th class="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Estado</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -290,7 +290,7 @@
               </div>
               <div v-else class="rounded-xl border border-gray-200 overflow-hidden">
                 <table class="w-full text-sm">
-                  <thead class="bg-[#003d7a]">
+                  <thead class="bg-blue-100 border-b border-blue-200">
                     <tr>
                       <th class="px-4 py-2.5 w-10">
                         <input
@@ -298,13 +298,13 @@
                           :checked="todosSeleccionados"
                           :indeterminate="seleccionados.length > 0 && !todosSeleccionados"
                           @change="toggleTodos"
-                          class="rounded border-white/50 text-white focus:ring-white cursor-pointer"
+                          class="rounded border-gray-300 text-[#003d7a] focus:ring-[#0066cc] cursor-pointer"
                         />
                       </th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Placa</th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Artículo</th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Marca / Modelo</th>
-                      <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Estado</th>
+                      <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Placa</th>
+                      <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Artículo</th>
+                      <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Marca / Modelo</th>
+                      <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Estado</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200">

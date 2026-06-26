@@ -13,7 +13,7 @@ GO
 -- 2. Tabla Placa
 --    Registra el número de placa y su tipo (institucional o interno).
 CREATE TABLE Placa (
-    Numero  VARCHAR(8)  NOT NULL,
+    Numero  VARCHAR(10)  NOT NULL,
     Tipo    VARCHAR(15) NOT NULL,
 
     CONSTRAINT PK_Placa      PRIMARY KEY (Numero),
@@ -80,15 +80,15 @@ CREATE TABLE Ubicacion (
 --    Tabla central del sistema. Registra cada bien institucional.
 --    Longitudes de campo ajustadas a las reglas de negocio del mockup.
 CREATE TABLE Activo (
-    Placa          VARCHAR(8)   NOT NULL,
-    Marca          VARCHAR(30)  NOT NULL,
-    Modelo         VARCHAR(20)  NOT NULL,
-    NumSerial      VARCHAR(30)  NOT NULL,
-    Articulo       VARCHAR(20)  NOT NULL,
+    Placa          VARCHAR(10)   NOT NULL,
+    Marca          VARCHAR(50)  NOT NULL,
+    Modelo         VARCHAR(50)  NOT NULL,
+    NumSerial      VARCHAR(50)  NOT NULL,
+    Articulo       VARCHAR(50)  NOT NULL,
     CategoriaId    INT          NOT NULL,
     Observaciones  VARCHAR(200) NULL,
     Ubicacion      BIGINT       NOT NULL,
-    Estado         VARCHAR(15)  NOT NULL DEFAULT 'Activo',
+    Estado         VARCHAR(20)  NOT NULL DEFAULT 'Activo',
     FechaDesecho   DATE         NULL,
 
     CONSTRAINT PK_Activo PRIMARY KEY (Placa),
@@ -116,7 +116,7 @@ CREATE TABLE Activo (
 --    genera una fila aquí (gestionado desde el backend, no con triggers).
 CREATE TABLE Historial (
     Id            BIGINT       IDENTITY(1,1) NOT NULL,
-    ActivoPlaca   VARCHAR(8)   NOT NULL,
+    ActivoPlaca   VARCHAR(10)   NOT NULL,
     UsuarioCorreo VARCHAR(50)  NOT NULL,
     TipoAccion    VARCHAR(20)  NOT NULL,
     Descripcion   VARCHAR(255) NULL,
@@ -152,7 +152,7 @@ CREATE TABLE Historial (
 --    Los cambios propuestos se serializan como JSON en DatosNuevos.
 CREATE TABLE SolicitudCambio (
     Id                INT          IDENTITY(1,1) NOT NULL,
-    ActivoPlaca       VARCHAR(8)   NOT NULL,
+    ActivoPlaca       VARCHAR(10)   NOT NULL,
     SolicitanteCorreo VARCHAR(50)  NOT NULL,
     FechaSolicitud    DATETIME     NOT NULL DEFAULT GETDATE(),
     DatosNuevos       NVARCHAR(MAX) NOT NULL,
@@ -179,14 +179,6 @@ CREATE TABLE SolicitudCambio (
 -- ============================================================
 -- DATOS INICIALES
 -- ============================================================
-
--- Categorías base
-INSERT INTO Categoria (Nombre, Icono) VALUES
-    ('Computadoras', 'Computer'),
-    ('Impresoras',   'Printer'),
-    ('Muebles',      'Armchair'),
-    ('Proyectores',  'Projector'),
-    ('Redes',        'Network');
 
 -- Usuario administrador inicial con contraseña temporal.
 -- El hash debe reemplazarse por uno generado con BCrypt antes de primer uso.

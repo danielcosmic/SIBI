@@ -65,6 +65,25 @@ public class UsuarioController : ControllerBase
         return Ok(new { correo = usuario.Correo, contrasenaTemp = tempPassword });
     }
 
+    [HttpPost("{correo}/reset-contrasena")]
+    public async Task<IActionResult> ResetContrasena(string correo)
+    {
+        var correoActual = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (correo == correoActual)
+            return BadRequest(new { mensaje = "No puedes restablecer tu propia contraseña desde aquí." });
+
+        var usuario = await _db.Usuarios.FindAsync(correo);
+        if (usuario is null) return NotFound(new { mensaje = "Usuario no encontrado." });
+
+        var tempPassword = GenerarContrasenaTemp();
+        usuario.Contrasena = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+        usuario.EsContrasenaTemporal = true;
+        usuario.IntentosFallidos = 0;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { correo = usuario.Correo, contrasenaTemp = tempPassword });
+    }
+
     [HttpDelete("{correo}")]
     public async Task<IActionResult> Eliminar(string correo)
     {

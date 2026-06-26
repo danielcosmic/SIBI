@@ -658,7 +658,9 @@ const navItems = computed(() => {
   if (auth.esGTI) {
     items.push({ to: '/encargados', label: 'Encargados', icon: IconPersonCard })
   }
-  items.push({ to: '/historial', label: 'Historial', icon: IconHistory })
+  if (!auth.esInvitado) {
+    items.push({ to: '/historial', label: 'Historial', icon: IconHistory })
+  }
   if (auth.esAdministradora) {
     items.push({ to: '/usuarios', label: 'Usuarios', icon: IconUsers })
   }

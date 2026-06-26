@@ -44,7 +44,7 @@
 
           <!-- Identificación -->
           <div class="rounded-xl border border-gray-200 overflow-hidden">
-            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Identificación</p>
+            <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Identificación</p>
             <div class="grid grid-cols-2 gap-3 p-4">
               <div class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-400 mb-0.5">Placa</p>
@@ -75,7 +75,7 @@
 
           <!-- Clasificación -->
           <div class="rounded-xl border border-gray-200 overflow-hidden">
-            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Clasificación</p>
+            <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Clasificación</p>
             <div class="grid grid-cols-2 gap-3 p-4">
               <div class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-400 mb-0.5">Categoría</p>
@@ -92,7 +92,7 @@
                   {{ props.activo?.estado }}
                 </span>
               </div>
-              <div v-if="props.activo?.fechaDesecho" class="bg-red-50 rounded-lg p-3 col-span-2">
+              <div v-if="props.activo?.fechaDesecho && !auth.esInvitado" class="bg-red-50 rounded-lg p-3 col-span-2">
                 <p class="text-xs text-red-400 mb-0.5">Fecha de Desecho</p>
                 <p class="font-medium text-red-700">{{ props.activo?.fechaDesecho }}</p>
               </div>
@@ -101,13 +101,13 @@
 
           <!-- Ubicación -->
           <div class="rounded-xl border border-gray-200 overflow-hidden">
-            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Ubicación</p>
-            <div class="grid grid-cols-2 gap-3 p-4">
+            <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Ubicación</p>
+            <div class="grid gap-3 p-4" :class="auth.esInvitado ? 'grid-cols-1' : 'grid-cols-2'">
               <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                 <p class="text-xs text-blue-500 mb-0.5">Ubicación Actual</p>
                 <p class="font-semibold text-blue-900">{{ props.activo?.ubicacionActual }}</p>
               </div>
-              <div class="bg-gray-50 rounded-lg p-3">
+              <div v-if="!auth.esInvitado" class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-400 mb-0.5">Ubicación Anterior</p>
                 <p class="font-medium text-gray-600">{{ props.activo?.ubicacionAnterior || '—' }}</p>
               </div>
@@ -116,13 +116,13 @@
 
           <!-- Encargados -->
           <div class="rounded-xl border border-gray-200 overflow-hidden">
-            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Encargados</p>
-            <div class="grid grid-cols-2 gap-3 p-4">
+            <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Encargados</p>
+            <div class="grid gap-3 p-4" :class="auth.esInvitado ? 'grid-cols-1' : 'grid-cols-2'">
               <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                 <p class="text-xs text-blue-500 mb-0.5">Encargado Actual</p>
                 <p class="font-semibold text-blue-900">{{ props.activo?.encargadoActual }}</p>
               </div>
-              <div class="bg-gray-50 rounded-lg p-3">
+              <div v-if="!auth.esInvitado" class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-400 mb-0.5">Encargado Anterior</p>
                 <p class="font-medium text-gray-600">{{ props.activo?.encargadoAnterior || '—' }}</p>
               </div>
@@ -131,7 +131,7 @@
 
           <!-- Observaciones -->
           <div v-if="props.activo?.observaciones" class="rounded-xl border border-gray-200 overflow-hidden">
-            <p class="text-xs font-semibold text-white uppercase tracking-wider bg-[#003d7a] px-4 py-2">Observaciones</p>
+            <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Observaciones</p>
             <div class="p-4 bg-gray-50">
               <p class="text-sm text-gray-700">{{ props.activo?.observaciones }}</p>
             </div>
@@ -144,7 +144,7 @@
             class="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
             Cerrar
           </button>
-          <button type="button" @click="router.push('/activo/' + props.activo?.placa); $emit('close')"
+          <button v-if="!auth.esInvitado" type="button" @click="router.push('/activo/' + props.activo?.placa); $emit('close')"
             class="flex items-center gap-1.5 px-4 py-2.5 text-[#0066cc] border border-[#0066cc]/30 rounded-lg hover:bg-blue-50 transition font-medium text-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -246,6 +246,34 @@
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">Categoría <span class="text-red-500">*</span></label>
                   <SearchableSelect v-model="form.categoriaId" :options="categoriasOptions" placeholder="Buscar categoría..." />
+                  <div v-if="showNuevaCategoria" class="mt-2 bg-white border border-blue-200 rounded-lg p-3 space-y-2">
+                    <div class="flex gap-2">
+                      <input v-model="nuevaCategoria.nombre" type="text" placeholder="Nombre de la categoría"
+                        class="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]"
+                        @keydown.enter.prevent="nuevaCategoria.nombre.trim() && !creandoCategoria && crearCategoria()" />
+                      <input v-model="nuevaCategoria.emoji" type="text" maxlength="2" placeholder="🗂️"
+                        class="w-12 text-center px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
+                    </div>
+                    <p v-if="errorCategoria" class="text-xs text-red-600">{{ errorCategoria }}</p>
+                    <div class="flex gap-2">
+                      <button type="button" @click="crearCategoria"
+                        :disabled="!nuevaCategoria.nombre.trim() || creandoCategoria"
+                        class="flex-1 py-1.5 text-xs bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-300">
+                        {{ creandoCategoria ? 'Creando...' : 'Crear categoría' }}
+                      </button>
+                      <button type="button" @click="showNuevaCategoria = false; errorCategoria = ''"
+                        class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 transition text-gray-600">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                  <button v-else-if="auth.esAdministradora" type="button" @click="showNuevaCategoria = true"
+                    class="mt-1.5 flex items-center gap-1 text-xs text-[#0066cc] hover:text-[#003d7a] transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nueva categoría
+                  </button>
                 </div>
                 <div v-if="mode !== 'create'">
                   <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
@@ -273,6 +301,34 @@
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">Encargado <span class="text-red-500">*</span></label>
                   <SearchableSelect v-model="form.encargadoId" :options="encargadosOptions" placeholder="Buscar encargado..." />
+                  <div v-if="showNuevoEncargado" class="mt-2 bg-white border border-blue-200 rounded-lg p-3 space-y-2">
+                    <div class="flex flex-col gap-2">
+                      <input v-model="nuevoEncargado.nombre" type="text" placeholder="Nombre del encargado"
+                        class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
+                      <input v-model="nuevoEncargado.rol" type="text" placeholder="Cargo o rol"
+                        class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]"
+                        @keydown.enter.prevent="nuevoEncargado.nombre.trim() && nuevoEncargado.rol.trim() && !creandoEncargado && crearEncargado()" />
+                    </div>
+                    <p v-if="errorEncargado" class="text-xs text-red-600">{{ errorEncargado }}</p>
+                    <div class="flex gap-2">
+                      <button type="button" @click="crearEncargado"
+                        :disabled="!nuevoEncargado.nombre.trim() || !nuevoEncargado.rol.trim() || creandoEncargado"
+                        class="flex-1 py-1.5 text-xs bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-300">
+                        {{ creandoEncargado ? 'Creando...' : 'Crear encargado' }}
+                      </button>
+                      <button type="button" @click="showNuevoEncargado = false; errorEncargado = ''"
+                        class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 transition text-gray-600">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                  <button v-else-if="auth.esGTI || auth.esAdministradora" type="button" @click="showNuevoEncargado = true"
+                    class="mt-1.5 flex items-center gap-1 text-xs text-[#0066cc] hover:text-[#003d7a] transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nuevo encargado
+                  </button>
                 </div>
               </div>
             </div>
@@ -327,6 +383,8 @@ import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import activoService from '@/services/activoService'
 import solicitudService from '@/services/solicitudService'
+import categoriaService from '@/services/categoriaService'
+import encargadoService from '@/services/encargadoService'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -356,14 +414,72 @@ const props = defineProps({
   encargados: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['close', 'saved', 'edit', 'enviarDesecho', 'cancelEdit', 'solicitar'])
+const emit = defineEmits(['close', 'saved', 'edit', 'enviarDesecho', 'cancelEdit', 'solicitar', 'entityCreated'])
+
+// Entities created inline during this modal session
+const categoriasLocales = ref([])
+const encargadosLocales = ref([])
 
 const categoriasOptions = computed(() =>
-  props.categorias.map(c => ({ value: c.id, label: `${c.icono ?? ''} ${c.nombre}`.trim() }))
+  [...props.categorias, ...categoriasLocales.value]
+    .map(c => ({ value: c.id, label: `${c.icono ?? ''} ${c.nombre}`.trim() }))
 )
 const encargadosOptions = computed(() =>
-  props.encargados.map(e => ({ value: e.id, label: `${e.nombre} — ${e.rol}` }))
+  [...props.encargados, ...encargadosLocales.value]
+    .map(e => ({ value: e.id, label: `${e.nombre} — ${e.rol}` }))
 )
+
+// Inline category creation
+const showNuevaCategoria = ref(false)
+const nuevaCategoria = ref({ nombre: '', emoji: '' })
+const creandoCategoria = ref(false)
+const errorCategoria = ref('')
+
+// Inline encargado creation
+const showNuevoEncargado = ref(false)
+const nuevoEncargado = ref({ nombre: '', rol: '' })
+const creandoEncargado = ref(false)
+const errorEncargado = ref('')
+
+async function crearCategoria() {
+  errorCategoria.value = ''
+  creandoCategoria.value = true
+  try {
+    const { data } = await categoriaService.crear({
+      nombre: nuevaCategoria.value.nombre.trim(),
+      icono: nuevaCategoria.value.emoji.trim() || null
+    })
+    categoriasLocales.value.push(data)
+    form.value.categoriaId = data.id
+    showNuevaCategoria.value = false
+    nuevaCategoria.value = { nombre: '', emoji: '' }
+    emit('entityCreated')
+  } catch (e) {
+    errorCategoria.value = e.response?.data?.mensaje || 'No se pudo crear la categoría.'
+  } finally {
+    creandoCategoria.value = false
+  }
+}
+
+async function crearEncargado() {
+  errorEncargado.value = ''
+  creandoEncargado.value = true
+  try {
+    const { data } = await encargadoService.crear({
+      nombre: nuevoEncargado.value.nombre.trim(),
+      rol: nuevoEncargado.value.rol.trim()
+    })
+    encargadosLocales.value.push(data)
+    form.value.encargadoId = data.id
+    showNuevoEncargado.value = false
+    nuevoEncargado.value = { nombre: '', rol: '' }
+    emit('entityCreated')
+  } catch (e) {
+    errorEncargado.value = e.response?.data?.mensaje || 'No se pudo crear el encargado.'
+  } finally {
+    creandoEncargado.value = false
+  }
+}
 
 const loading = ref(false)
 const error = ref('')

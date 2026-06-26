@@ -14,5 +14,8 @@ export default {
     api.delete(`/usuario/${encodeURIComponent(correo)}`),
 
   desbloquear: (correo) =>
-    api.post(`/usuario/${encodeURIComponent(correo)}/desbloquear`)
+    api.post(`/usuario/${encodeURIComponent(correo)}/desbloquear`),
+
+  resetContrasena: (correo) =>
+    api.post(`/usuario/${encodeURIComponent(correo)}/reset-contrasena`)
 }

@@ -58,8 +58,8 @@
         <p class="text-xs text-purple-500 mt-3 font-medium">Ver categorías →</p>
       </div>
 
-      <!-- Encargados (no visible para JefaAdministrativa) -->
-      <div v-if="!auth.esJefaAdministrativa" @click="router.push('/encargados')"
+      <!-- Encargados (GTI / Administradora) -->
+      <div v-if="auth.esGTI" @click="router.push('/encargados')"
         class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-green-100/50 bg-gradient-to-br from-white to-green-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-green-300/50">
         <div class="flex items-center justify-between">
           <div>
@@ -75,8 +75,8 @@
         <p class="text-xs text-green-600 mt-3 font-medium">Ver encargados →</p>
       </div>
 
-      <!-- Cambios Solicitados (solo JefaAdministrativa) -->
-      <div v-else @click="router.push('/mis-solicitudes')"
+      <!-- Cambios Solicitados (JefaAdministrativa) -->
+      <div v-else-if="auth.esJefaAdministrativa" @click="router.push('/mis-solicitudes')"
         class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl p-6 border border-amber-100/50 bg-gradient-to-br from-white to-amber-50/50 transition-all duration-300 cursor-pointer hover:scale-105 hover:border-amber-300/50">
         <div class="flex items-center justify-between">
           <div>
@@ -90,6 +90,23 @@
           </div>
         </div>
         <p class="text-xs text-amber-600 mt-3 font-medium">Ver mis solicitudes →</p>
+      </div>
+
+      <!-- Mantenimiento (Invitado) -->
+      <div v-else
+        class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-yellow-100/50 bg-gradient-to-br from-white to-yellow-50/50 transition-all duration-300">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 font-medium">Mantenimiento</p>
+            <p class="text-3xl font-bold text-yellow-600 mt-2">{{ stats.enMantenimiento }}</p>
+          </div>
+          <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+        </div>
+        <p class="text-xs text-yellow-600 mt-3 font-medium">Activos en mantenimiento</p>
       </div>
     </div>
 
@@ -145,18 +162,19 @@
           <div v-else-if="activosRecientes.length === 0" class="py-6 text-center text-gray-400 text-sm">No hay activos en esta categoría.</div>
           <div v-else class="overflow-x-auto rounded-xl border border-blue-200">
             <table class="w-full text-sm">
-              <thead class="bg-[#003d7a]">
+              <thead class="bg-blue-100 border-b border-blue-200">
                 <tr>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Placa</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Artículo</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Marca / Modelo</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Ubicación</th>
-                  <th class="text-left px-4 py-2.5 text-xs font-semibold text-white uppercase tracking-wide">Estado</th>
+                  <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Placa</th>
+                  <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Artículo</th>
+                  <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Marca / Modelo</th>
+                  <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Ubicación</th>
+                  <th class="text-left px-4 py-2.5 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Estado</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
                 <tr v-for="(activo, idx) in activosRecientes" :key="activo.placa"
-                  class="hover:bg-blue-50 transition"
+                  @click="abrirDetalleActivo(activo)"
+                  class="hover:bg-blue-50 transition cursor-pointer"
                   :class="idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
                   <td class="px-4 py-3 font-mono text-[#003d7a] font-medium">{{ activo.placa }}</td>
                   <td class="px-4 py-3 text-gray-800">{{ activo.articulo }}</td>
@@ -181,7 +199,7 @@
     </div>
 
     <!-- Actividad Reciente -->
-    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-blue-100/50">
+    <div v-if="!auth.esInvitado" class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-blue-100/50">
       <h3 class="text-lg font-semibold text-[#003d7a] mb-4">Actividad Reciente</h3>
       <div v-if="actividad.length === 0" class="text-center py-8 text-gray-400">
         No hay actividad reciente.
@@ -273,6 +291,15 @@
       </div>
     </div>
   </div>
+
+  <ActivoModal
+    v-if="modalDashOpen"
+    mode="view"
+    :activo="activoDashSeleccionado"
+    :categorias="[]"
+    :encargados="[]"
+    @close="modalDashOpen = false"
+  />
 </template>
 
 <script setup>
@@ -283,6 +310,7 @@ import activoService from '@/services/activoService'
 import historialService from '@/services/historialService'
 import encargadoService from '@/services/encargadoService'
 import solicitudService from '@/services/solicitudService'
+import ActivoModal from '@/components/ActivoModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -297,6 +325,8 @@ const cargandoRecientes = ref(false)
 const actividadSeleccionada = ref(null)
 const activoDetalle = ref(null)
 const cargandoDetalle = ref(false)
+const modalDashOpen = ref(false)
+const activoDashSeleccionado = ref(null)
 
 onMounted(async () => {
   if (auth.esJefaAdministrativa) {
@@ -308,6 +338,13 @@ onMounted(async () => {
     stats.value = statsRes.data
     actividad.value = histRes.data.items
     totalSolicitudes.value = solRes.data.length
+  } else if (auth.esInvitado) {
+    const [statsRes, encRes] = await Promise.all([
+      activoService.stats(),
+      encargadoService.listar()
+    ])
+    stats.value = statsRes.data
+    totalEncargados.value = encRes.data.length
   } else {
     const [statsRes, histRes, encRes] = await Promise.all([
       activoService.stats(),
@@ -395,6 +432,18 @@ function accentAccion(tipo) { return ACCENTS[tipo] || 'border-l-gray-300' }
 
 function formatFecha(iso) {
   return new Date(iso).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+async function abrirDetalleActivo(activo) {
+  try {
+    const res = await activoService.obtener(activo.placa)
+    activoDashSeleccionado.value = res.data
+    modalDashOpen.value = true
+  } catch {
+    // si falla el fetch, abrir con los datos parciales disponibles
+    activoDashSeleccionado.value = activo
+    modalDashOpen.value = true
+  }
 }
 </script>
 

@@ -151,7 +151,7 @@ async function handleSubmit() {
   error.value = ''
   loading.value = true
   try {
-    await authService.cambiarContrasena(nueva.value)
+    await authService.cambiarContrasena('', nueva.value)
     auth.clearTempFlag()
     router.push('/dashboard')
   } catch {

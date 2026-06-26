@@ -76,7 +76,10 @@ public class AuthService
         var usuario = await _db.Usuarios
             .FirstOrDefaultAsync(u => u.Correo == correo && u.Activo);
 
-        if (usuario is null || !BCrypt.Net.BCrypt.Verify(actual, usuario.Contrasena))
+        if (usuario is null) return "incorrecta";
+
+        // Usuarios con contraseña temporal ya verificaron al hacer login; no se exige la actual.
+        if (!usuario.EsContrasenaTemporal && !BCrypt.Net.BCrypt.Verify(actual, usuario.Contrasena))
             return "incorrecta";
 
         if (!ValidarFuerzaContrasena(nueva))

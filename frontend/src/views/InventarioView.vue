@@ -91,15 +91,15 @@
     <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-200">
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-[#003d7a] border-b-2 border-[#002d5a]">
+          <thead class="bg-blue-100 border-b border-blue-200">
             <tr>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Placa</th>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Artículo</th>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Marca / Modelo</th>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Categoría</th>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Ubicación</th>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Encargado</th>
-              <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Placa</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Artículo</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Marca / Modelo</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Categoría</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Ubicación</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Encargado</th>
+              <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Estado</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -171,6 +171,7 @@
       @solicitar="modalMode = 'solicitud'"
       @cancelEdit="modalMode = 'view'"
       @enviarDesecho="confirmarDesecho"
+      @entityCreated="recargarEntidades"
     />
 
     <!-- Modal importar -->
@@ -325,6 +326,12 @@ function abrirModal(mode, activo) {
   modalMode.value = mode
   activoSeleccionado.value = activo
   modalOpen.value = true
+}
+
+async function recargarEntidades() {
+  const [catRes, encRes] = await Promise.all([categoriaService.listar(), encargadoService.listar()])
+  categorias.value = catRes.data
+  encargados.value = encRes.data
 }
 
 async function confirmarDesecho(activo) {

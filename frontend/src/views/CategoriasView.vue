@@ -103,14 +103,14 @@
         <!-- Tabla (mismo estilo que Inventario) -->
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-[#003d7a]">
+            <thead class="bg-blue-100 border-b border-blue-200">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Placa</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Artículo</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Marca / Modelo</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ubicación</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Encargado</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-3 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Placa</th>
+                <th class="px-6 py-3 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Artículo</th>
+                <th class="px-6 py-3 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Marca / Modelo</th>
+                <th class="px-6 py-3 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Ubicación</th>
+                <th class="px-6 py-3 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Encargado</th>
+                <th class="px-6 py-3 text-left text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest">Estado</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">

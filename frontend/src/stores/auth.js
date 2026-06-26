@@ -13,7 +13,8 @@ export const useAuthStore = defineStore('auth', {
     nombre: (state) => state.usuario?.nombre || '',
     correo: (state) => state.usuario?.correo || '',
     esContrasenaTemporal: (state) => !!state.usuario?.esContrasenaTemporal,
-    esJefaAdministrativa: (state) => state.usuario?.permisos === 'JefaAdministrativa'
+    esJefaAdministrativa: (state) => state.usuario?.permisos === 'JefaAdministrativa',
+    esInvitado: (state) => state.usuario?.permisos === 'Invitado'
   },
   actions: {
     setAuth(token, usuario) {

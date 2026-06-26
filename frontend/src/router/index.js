@@ -36,7 +36,8 @@ const routes = [
       {
         path: 'activo/:placa',
         name: 'ActivoDetalle',
-        component: () => import('@/views/ActivoDetalleView.vue')
+        component: () => import('@/views/ActivoDetalleView.vue'),
+        meta: { requiresNoInvitado: true }
       },
       {
         path: 'encargados',
@@ -47,7 +48,8 @@ const routes = [
       {
         path: 'historial',
         name: 'Historial',
-        component: () => import('@/views/HistorialView.vue')
+        component: () => import('@/views/HistorialView.vue'),
+        meta: { requiresNoInvitado: true }
       },
       {
         path: 'usuarios',
@@ -110,6 +112,10 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresGTIorAdmin && !auth.esGTI) {
+    return { name: 'Dashboard' }
+  }
+
+  if (to.meta.requiresNoInvitado && auth.esInvitado) {
     return { name: 'Dashboard' }
   }
 })

@@ -8,7 +8,7 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "GTI,Administradora,JefaAdministrativa")]
 public class HistorialController : ControllerBase
 {
     private readonly SibiDbContext _db;

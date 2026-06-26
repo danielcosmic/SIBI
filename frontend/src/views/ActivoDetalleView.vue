@@ -184,17 +184,17 @@
       </div>
 
       <!-- Historial de ubicaciones y encargados -->
-      <div v-if="historialMovimientos.length" class="bg-white rounded-2xl shadow-md p-6 border border-blue-200">
+      <div v-if="historialMovimientos.length && !auth.esInvitado" class="bg-white rounded-2xl shadow-md p-6 border border-blue-200">
         <h3 class="text-lg font-semibold text-[#003d7a] mb-4">Historial de Ubicaciones y Encargados</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-[#003d7a]">
+            <thead class="bg-blue-100 border-b border-blue-200">
               <tr>
-                <th class="text-left px-3 py-2 text-xs font-semibold text-white uppercase tracking-wide">Fecha</th>
-                <th class="text-left px-3 py-2 text-xs font-semibold text-white uppercase tracking-wide">Tipo</th>
-                <th class="text-left px-3 py-2 text-xs font-semibold text-white uppercase tracking-wide">Anterior</th>
-                <th class="text-left px-3 py-2 text-xs font-semibold text-white uppercase tracking-wide">Nuevo</th>
-                <th class="text-left px-3 py-2 text-xs font-semibold text-white uppercase tracking-wide">Realizado por</th>
+                <th class="text-left px-3 py-2 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Fecha</th>
+                <th class="text-left px-3 py-2 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Tipo</th>
+                <th class="text-left px-3 py-2 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Anterior</th>
+                <th class="text-left px-3 py-2 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Nuevo</th>
+                <th class="text-left px-3 py-2 text-[10.5px] font-semibold text-[#003d7a] uppercase tracking-widest">Realizado por</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">

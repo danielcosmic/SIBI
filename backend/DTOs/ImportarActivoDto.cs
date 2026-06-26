@@ -10,7 +10,8 @@ public record ImportarActivoFilaRequest(
     string CategoriaNombre,
     string UbicacionActual,
     string EncargadoNombre,
-    string? Observaciones
+    string? Observaciones,
+    Guid? EncargadoId = null
 );
 
 public record ImportarActivoResultadoDto(
