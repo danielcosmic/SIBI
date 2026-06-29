@@ -583,7 +583,7 @@ function rolDisplay(r) { return r === 'JefaAdministrativa' ? 'Jefa Administrativ
 const rolesInfo = [
   { nombre: 'Administradora', borde: 'border-purple-500', bg: 'bg-purple-100', icono: 'text-purple-600', check: 'text-purple-500', permisos: ['Ver, crear y editar activos del inventario', 'Aprobar cambios de placa', 'Crear usuarios y generar claves temporales', 'Aceptar/rechazar solicitudes de eliminación', 'Agregar y gestionar categorías'] },
   { nombre: 'GTI', borde: 'border-blue-500', bg: 'bg-blue-100', icono: 'text-blue-600', check: 'text-blue-500', permisos: ['Ver, crear y editar activos del inventario', 'Editar ubicación y responsable', 'Registrar activos para desecho'] },
-  { nombre: 'Jefa Administrativa', borde: 'border-green-500', bg: 'bg-green-100', icono: 'text-green-600', check: 'text-green-500', permisos: ['Ver el inventario', 'Solicitar cambios en elementos del inventario', 'Aprobar procesos administrativos'] },
+  { nombre: 'Jefa Administrativa', borde: 'border-green-500', bg: 'bg-green-100', icono: 'text-green-600', check: 'text-green-500', permisos: ['Ver el inventario', 'Solicitar cambios en elementos del inventario'] },
   { nombre: 'Invitado', borde: 'border-gray-500', bg: 'bg-gray-100', icono: 'text-gray-600', check: 'text-gray-500', permisos: ['Solo lectura del inventario'] }
 ]
 </script>
