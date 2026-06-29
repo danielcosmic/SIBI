@@ -181,6 +181,73 @@
             </div>
           </div>
 
+          <!-- Categories similar to DB entries -->
+          <div v-if="categoriasSimilaresADB.length" class="space-y-2">
+            <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span class="w-5 h-5 bg-yellow-100 text-yellow-700 rounded flex items-center justify-center text-xs">~</span>
+              Categorías similares a existentes ({{ categoriasSimilaresADB.length }})
+            </h4>
+            <p class="text-xs text-gray-500">El sistema detectó que estas categorías del archivo podrían ser la misma que una ya registrada. Indica si usar la existente o crear una nueva.</p>
+            <div v-for="sim in categoriasSimilaresADB" :key="sim.nombreExcel"
+              class="p-3 rounded-lg border border-yellow-200 bg-yellow-50 space-y-2.5">
+              <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <span class="text-[10px] text-gray-400 uppercase tracking-wide block">En el archivo</span>
+                  <span class="font-mono font-medium text-gray-800">"{{ sim.nombreExcel }}"</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-gray-400 uppercase tracking-wide block">Ya existe en sistema</span>
+                  <span class="font-medium text-[#003d7a]">"{{ sim.categoriaDB.nombre }}"</span>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-4">
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="radio" :name="'catSim_' + sim.nombreExcel" value="db" v-model="sim.decision" class="accent-[#003d7a]" />
+                  <span :class="sim.decision === 'db' ? 'text-[#003d7a] font-medium' : 'text-gray-600'">
+                    Usar "{{ sim.categoriaDB.nombre }}" (existente)
+                  </span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="radio" :name="'catSim_' + sim.nombreExcel" value="nueva" v-model="sim.decision" class="accent-[#003d7a]" />
+                  <span :class="sim.decision === 'nueva' ? 'text-gray-900 font-medium' : 'text-gray-600'">
+                    Crear "{{ sim.nombreExcel }}" como nueva
+                  </span>
+                </label>
+              </div>
+              <div v-if="sim.decision === 'nueva'" class="flex items-center gap-2 pl-1">
+                <label class="text-xs text-gray-500 shrink-0">Ícono:</label>
+                <input v-model="sim.emoji" type="text" maxlength="2" placeholder="🗂️"
+                  class="w-12 text-center border border-gray-300 rounded px-1 py-0.5 text-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Category groups (similar among themselves, all new to DB) -->
+          <div v-if="gruposCategoriasSimilares.length" class="space-y-2">
+            <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span class="w-5 h-5 bg-yellow-100 text-yellow-700 rounded flex items-center justify-center text-xs">~</span>
+              Posibles duplicados de categorías en el archivo ({{ gruposCategoriasSimilares.length }})
+            </h4>
+            <p class="text-xs text-gray-500">Estas categorías del archivo parecen ser la misma con diferente escritura. Elige el nombre que se usará para todas.</p>
+            <div v-for="grupo in gruposCategoriasSimilares" :key="grupo.nombres[0]"
+              class="p-3 rounded-lg border border-yellow-200 bg-yellow-50 space-y-2">
+              <span class="text-xs text-gray-500">{{ filasDependientesGrupoCat(grupo).length }} activo(s) afectados</span>
+              <div class="flex flex-col gap-1.5 pl-1">
+                <label v-for="nombre in grupo.nombres" :key="nombre"
+                  class="flex items-center gap-2 cursor-pointer text-sm"
+                  :class="grupo.nombreElegido === nombre ? 'text-gray-900 font-medium' : 'text-gray-600'">
+                  <input type="radio" :name="'grupoCat_' + grupo.nombres[0]" :value="nombre" v-model="grupo.nombreElegido" class="accent-[#003d7a]" />
+                  {{ nombre }}
+                </label>
+              </div>
+              <div class="flex items-center gap-2 pt-0.5">
+                <label class="text-xs text-gray-500 shrink-0">Ícono:</label>
+                <input v-model="grupo.emoji" type="text" maxlength="2" placeholder="🗂️"
+                  class="w-12 text-center border border-gray-300 rounded px-1 py-0.5 text-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
+              </div>
+            </div>
+          </div>
+
           <!-- New categories -->
           <div v-if="categoriasNuevas.length" class="space-y-2">
             <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -200,6 +267,74 @@
               <span v-else class="text-xs text-gray-400 italic">
                 {{ filasDependientes('cat', cat.nombre).length }} activo(s) no se importarán
               </span>
+            </div>
+          </div>
+
+          <!-- Encargados similar to DB entries -->
+          <div v-if="encargadosSimilaresADB.length" class="space-y-2">
+            <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span class="w-5 h-5 bg-yellow-100 text-yellow-700 rounded flex items-center justify-center text-xs">~</span>
+              Encargados similares a existentes ({{ encargadosSimilaresADB.length }})
+            </h4>
+            <p class="text-xs text-gray-500">El sistema detectó que estos encargados del archivo podrían ser la misma persona que una ya registrada.</p>
+            <div v-for="sim in encargadosSimilaresADB" :key="sim.nombreExcel"
+              class="p-3 rounded-lg border border-yellow-200 bg-yellow-50 space-y-2.5">
+              <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <span class="text-[10px] text-gray-400 uppercase tracking-wide block">En el archivo</span>
+                  <span class="font-medium text-gray-800">"{{ sim.nombreExcel }}"</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-gray-400 uppercase tracking-wide block">Ya existe en sistema</span>
+                  <span class="font-medium text-[#003d7a]">"{{ sim.encargadoDB.nombre }}"</span>
+                  <span class="text-xs text-gray-400 block">{{ sim.encargadoDB.rol || 'Sin rol' }}</span>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-4">
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="radio" :name="'encSim_' + sim.nombreExcel" value="db" v-model="sim.decision" class="accent-[#003d7a]" />
+                  <span :class="sim.decision === 'db' ? 'text-[#003d7a] font-medium' : 'text-gray-600'">
+                    Usar "{{ sim.encargadoDB.nombre }}" (existente)
+                  </span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="radio" :name="'encSim_' + sim.nombreExcel" value="nueva" v-model="sim.decision" class="accent-[#003d7a]" />
+                  <span :class="sim.decision === 'nueva' ? 'text-gray-900 font-medium' : 'text-gray-600'">
+                    Crear "{{ sim.nombreExcel }}" como nuevo
+                  </span>
+                </label>
+              </div>
+              <div v-if="sim.decision === 'nueva'" class="pl-1">
+                <input v-model="sim.rol" type="text" placeholder="Cargo o rol (ej: Docente, Administrativo...)"
+                  class="w-full border rounded px-3 py-1.5 text-sm outline-none focus:ring-1 transition-colors"
+                  :class="!sim.rol?.trim() ? 'border-red-300 bg-red-50 focus:ring-red-400' : 'border-gray-300 focus:ring-[#003d7a]'" />
+                <span v-if="!sim.rol?.trim()" class="text-xs text-red-500">Requerido</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Encargado groups (similar among themselves, all new to DB) -->
+          <div v-if="gruposEncargadosSimilares.length" class="space-y-2">
+            <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span class="w-5 h-5 bg-yellow-100 text-yellow-700 rounded flex items-center justify-center text-xs">~</span>
+              Posibles duplicados de encargados en el archivo ({{ gruposEncargadosSimilares.length }})
+            </h4>
+            <p class="text-xs text-gray-500">Estos encargados del archivo parecen ser la misma persona con diferente escritura. Elige el nombre que se usará para todos.</p>
+            <div v-for="grupo in gruposEncargadosSimilares" :key="grupo.nombres[0]"
+              class="p-3 rounded-lg border border-yellow-200 bg-yellow-50 space-y-2">
+              <span class="text-xs text-gray-500">{{ filasDependientesGrupoEnc(grupo).length }} activo(s) afectados</span>
+              <div class="flex flex-col gap-1.5 pl-1">
+                <label v-for="nombre in grupo.nombres" :key="nombre"
+                  class="flex items-center gap-2 cursor-pointer text-sm"
+                  :class="grupo.nombreElegido === nombre ? 'text-gray-900 font-medium' : 'text-gray-600'">
+                  <input type="radio" :name="'grupoEnc_' + grupo.nombres[0]" :value="nombre" v-model="grupo.nombreElegido" class="accent-[#003d7a]" />
+                  {{ nombre }}
+                </label>
+              </div>
+              <input v-model="grupo.rol" type="text" placeholder="Cargo o rol (ej: Docente, Administrativo...)"
+                class="w-full border rounded px-3 py-1.5 text-sm outline-none focus:ring-1 transition-colors"
+                :class="!grupo.rol?.trim() ? 'border-red-300 bg-red-50 focus:ring-red-400' : 'border-gray-300 focus:ring-[#003d7a]'" />
+              <span v-if="!grupo.rol?.trim()" class="text-xs text-red-500">El rol es requerido</span>
             </div>
           </div>
 
@@ -389,11 +524,63 @@ const filas = ref([])
 const resultados = ref([])
 const importando = ref(false)
 
-// New entities found in the file that don't exist in DB
+// Truly new entities (no similarity to anything)
 const categoriasNuevas = ref([])   // [{ nombre, emoji, aprobada }]
 const encargadosNuevos = ref([])   // [{ nombre, rol, aprobado }]
-// Encargados whose name matches multiple DB records
-const encargadosAmbiguos = ref([]) // [{ nombre, opciones: [{id,nombre,rol}], seleccionadoId }]
+// Exact-name duplicates in DB (multiple DB records for same name)
+const encargadosAmbiguos = ref([]) // [{ nombre, opciones:[{id,nombre,rol}], seleccionadoId }]
+// Similar to an existing DB entry (typo/accent difference)
+const categoriasSimilaresADB = ref([])    // [{ nombreExcel, categoriaDB:{id,nombre}, decision:'db'|'nueva', emoji:'' }]
+const encargadosSimilaresADB = ref([])    // [{ nombreExcel, encargadoDB:{id,nombre,rol}, decision:'db'|'nueva', rol:'' }]
+// Groups of similar names among themselves (all new to DB)
+const gruposCategoriasSimilares = ref([]) // [{ nombres:[], nombreElegido, emoji:'' }]
+const gruposEncargadosSimilares = ref([]) // [{ nombres:[], nombreElegido, rol:'' }]
+
+// ── Similarity helpers ─────────────────────────────────────────────────────
+function normalizarTexto(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length
+  const dp = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0))
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+  return dp[m][n]
+}
+
+const UMBRAL = 0.78
+
+function esSimilar(a, b) {
+  const na = normalizarTexto(a), nb = normalizarTexto(b)
+  if (na === nb) return false
+  const maxLen = Math.max(na.length, nb.length)
+  return maxLen > 0 && (1 - levenshtein(na, nb) / maxLen) >= UMBRAL
+}
+
+// ── Canonical name resolvers (apply user decisions to Excel values) ─────────
+function nombreCanonicoCategoria(nombre) {
+  const nl = nombre.toLowerCase()
+  const simDB = categoriasSimilaresADB.value.find(s => s.nombreExcel.toLowerCase() === nl)
+  if (simDB?.decision === 'db') return simDB.categoriaDB.nombre
+  const grupo = gruposCategoriasSimilares.value.find(g => g.nombres.some(n => n.toLowerCase() === nl))
+  if (grupo) return grupo.nombreElegido
+  return nombre
+}
+
+function nombreCanonicoEncargado(nombre) {
+  const nl = nombre.toLowerCase()
+  const simDB = encargadosSimilaresADB.value.find(s => s.nombreExcel.toLowerCase() === nl)
+  if (simDB?.decision === 'db') return simDB.encargadoDB.nombre
+  const grupo = gruposEncargadosSimilares.value.find(g => g.nombres.some(n => n.toLowerCase() === nl))
+  if (grupo) return grupo.nombreElegido
+  return nombre
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 const COLUMNAS = ['Placa', 'Tipo Placa', 'Artículo', 'Marca', 'Modelo', 'N° Serial', 'Categoría', 'Ubicación Actual', 'Encargado', 'Observaciones']
 
@@ -404,7 +591,6 @@ const encargadosPorNombre = computed(() =>
   new Set(props.encargados.map(e => e.nombre.toLowerCase()))
 )
 
-// Map name.lower → count of DB records with that name
 const encargadosConteo = computed(() => {
   const m = {}
   props.encargados.forEach(e => {
@@ -439,12 +625,18 @@ const filasConEntidadesNuevas = computed(() =>
 const tieneEntidadesNuevas = computed(() =>
   categoriasNuevas.value.length > 0 ||
   encargadosNuevos.value.length > 0 ||
-  encargadosAmbiguos.value.length > 0
+  encargadosAmbiguos.value.length > 0 ||
+  categoriasSimilaresADB.value.length > 0 ||
+  encargadosSimilaresADB.value.length > 0 ||
+  gruposCategoriasSimilares.value.length > 0 ||
+  gruposEncargadosSimilares.value.length > 0
 )
 
-const encargadosConRolFaltante = computed(() =>
-  encargadosNuevos.value.filter(e => e.aprobado && !e.rol.trim())
-)
+const encargadosConRolFaltante = computed(() => [
+  ...encargadosNuevos.value.filter(e => e.aprobado && !e.rol.trim()),
+  ...encargadosSimilaresADB.value.filter(s => s.decision === 'nueva' && !s.rol?.trim()),
+  ...gruposEncargadosSimilares.value.filter(g => !g.rol?.trim())
+])
 
 const encargadosAmbiguosSinResolver = computed(() =>
   encargadosAmbiguos.value.filter(e => !e.seleccionadoId)
@@ -460,11 +652,11 @@ const filasAImportar = computed(() => {
   const sinResolver = new Set(
     encargadosAmbiguos.value.filter(e => !e.seleccionadoId).map(e => e.nombre.toLowerCase())
   )
-  return filasValidas.value.filter(f =>
-    !rechCats.has((f.categoriaNombre ?? '').toLowerCase()) &&
-    !rechEncs.has((f.encargadoNombre ?? '').toLowerCase()) &&
-    !sinResolver.has((f.encargadoNombre ?? '').toLowerCase())
-  )
+  return filasValidas.value.filter(f => {
+    const catCanon = nombreCanonicoCategoria(f.categoriaNombre ?? '').toLowerCase()
+    const encCanon = nombreCanonicoEncargado(f.encargadoNombre ?? '').toLowerCase()
+    return !rechCats.has(catCanon) && !rechEncs.has(encCanon) && !sinResolver.has(encCanon)
+  })
 })
 
 const stepsDisplay = computed(() => {
@@ -483,7 +675,7 @@ const stepsDisplay = computed(() => {
   ]
 })
 
-const resultadosExitosos  = computed(() => resultados.value.filter(r => r.exitoso))
+const resultadosExitosos   = computed(() => resultados.value.filter(r => r.exitoso))
 const resultadosExistentes = computed(() => resultados.value.filter(r => !r.exitoso && r.error?.toLowerCase().includes('ya existe')))
 const resultadosError      = computed(() => resultados.value.filter(r => !r.exitoso && !r.error?.toLowerCase().includes('ya existe')))
 
@@ -491,6 +683,18 @@ function filasDependientes(tipo, nombre) {
   const nl = nombre.toLowerCase()
   if (tipo === 'cat') return filasValidas.value.filter(f => f.categoriaNombre?.toLowerCase() === nl)
   return filasValidas.value.filter(f => f.encargadoNombre?.toLowerCase() === nl)
+}
+
+function filasDependientesGrupoCat(grupo) {
+  return filasValidas.value.filter(f =>
+    grupo.nombres.some(n => n.toLowerCase() === f.categoriaNombre?.toLowerCase())
+  )
+}
+
+function filasDependientesGrupoEnc(grupo) {
+  return filasValidas.value.filter(f =>
+    grupo.nombres.some(n => n.toLowerCase() === f.encargadoNombre?.toLowerCase())
+  )
 }
 
 function irAPaso3() {
@@ -560,7 +764,6 @@ async function parsearArchivo() {
       observaciones:   String(r[9] ?? '').trim(),
       _errores: []
     }
-
     if (!fila.placa)           fila._errores.push('Placa vacía')
     if (!fila.articulo)        fila._errores.push('Artículo vacío')
     if (!fila.marca)           fila._errores.push('Marca vacía')
@@ -571,42 +774,103 @@ async function parsearArchivo() {
     if (!fila.encargadoNombre) fila._errores.push('Encargado vacío')
     if (!['Institucional', 'Interno'].includes(fila.tipoPlaca))
       fila._errores.push('Tipo Placa inválido (Institucional / Interno)')
-
     return fila
   })
 
   const knownCats = categoriasPorNombre.value
   const knownEncs = encargadosPorNombre.value
 
-  // Detect new categories
+  // ── Category similarity analysis ──────────────────────────────────────
   const newCatNames = [...new Set(
     filas.value
       .filter(f => f._errores.length === 0 && f.categoriaNombre && !knownCats.has(f.categoriaNombre.toLowerCase()))
       .map(f => f.categoriaNombre)
   )]
 
-  // Detect new encargados (not in DB at all)
+  const catSimADB = []
+  const catEnSimDB = new Set()
+  for (const nombre of newCatNames) {
+    const match = props.categorias.find(c => esSimilar(nombre, c.nombre))
+    if (match) {
+      catSimADB.push({ nombreExcel: nombre, categoriaDB: match, decision: 'db', emoji: '' })
+      catEnSimDB.add(nombre.toLowerCase())
+    }
+  }
+
+  const catSinMatchDB = newCatNames.filter(n => !catEnSimDB.has(n.toLowerCase()))
+  const gruposCats = []
+  const asigCat = new Set()
+  for (const nombre of catSinMatchDB) {
+    if (asigCat.has(nombre.toLowerCase())) continue
+    const grupo = [nombre]
+    asigCat.add(nombre.toLowerCase())
+    for (const otro of catSinMatchDB) {
+      if (!asigCat.has(otro.toLowerCase()) && esSimilar(nombre, otro)) {
+        grupo.push(otro)
+        asigCat.add(otro.toLowerCase())
+      }
+    }
+    if (grupo.length > 1) gruposCats.push({ nombres: grupo, nombreElegido: grupo[0], emoji: '' })
+  }
+
+  const enGrupoCat = new Set(gruposCats.flatMap(g => g.nombres.map(n => n.toLowerCase())))
+  const catNuevasRestantes = catSinMatchDB.filter(n => !enGrupoCat.has(n.toLowerCase()))
+
+  categoriasSimilaresADB.value = catSimADB
+  gruposCategoriasSimilares.value = gruposCats
+  categoriasNuevas.value = catNuevasRestantes.map(n => ({ nombre: n, emoji: '', aprobada: true }))
+
+  // ── Encargado similarity analysis ──────────────────────────────────────
   const newEncNames = [...new Set(
     filas.value
       .filter(f => f._errores.length === 0 && f.encargadoNombre && !knownEncs.has(f.encargadoNombre.toLowerCase()))
       .map(f => f.encargadoNombre)
   )]
 
-  // Detect ambiguous encargados (name exists in DB but matches multiple records)
+  const encSimADB = []
+  const encEnSimDB = new Set()
+  for (const nombre of newEncNames) {
+    const match = props.encargados.find(e => esSimilar(nombre, e.nombre))
+    if (match) {
+      encSimADB.push({ nombreExcel: nombre, encargadoDB: match, decision: 'db', rol: '' })
+      encEnSimDB.add(nombre.toLowerCase())
+    }
+  }
+
+  const encSinMatchDB = newEncNames.filter(n => !encEnSimDB.has(n.toLowerCase()))
+  const gruposEncs = []
+  const asigEnc = new Set()
+  for (const nombre of encSinMatchDB) {
+    if (asigEnc.has(nombre.toLowerCase())) continue
+    const grupo = [nombre]
+    asigEnc.add(nombre.toLowerCase())
+    for (const otro of encSinMatchDB) {
+      if (!asigEnc.has(otro.toLowerCase()) && esSimilar(nombre, otro)) {
+        grupo.push(otro)
+        asigEnc.add(otro.toLowerCase())
+      }
+    }
+    if (grupo.length > 1) gruposEncs.push({ nombres: grupo, nombreElegido: grupo[0], rol: '' })
+  }
+
+  const enGrupoEnc = new Set(gruposEncs.flatMap(g => g.nombres.map(n => n.toLowerCase())))
+  const encNuevosRestantes = encSinMatchDB.filter(n => !enGrupoEnc.has(n.toLowerCase()))
+
   const ambiguousEncNames = [...new Set(
     filas.value
       .filter(f => f._errores.length === 0 && f.encargadoNombre && encargadoEsAmbiguo(f.encargadoNombre))
       .map(f => f.encargadoNombre)
   )]
 
-  categoriasNuevas.value = newCatNames.map(n => ({ nombre: n, emoji: '', aprobada: true }))
-  encargadosNuevos.value = newEncNames.map(n => ({ nombre: n, rol: '', aprobado: true }))
+  encargadosSimilaresADB.value = encSimADB
+  gruposEncargadosSimilares.value = gruposEncs
+  encargadosNuevos.value = encNuevosRestantes.map(n => ({ nombre: n, rol: '', aprobado: true }))
   encargadosAmbiguos.value = ambiguousEncNames.map(nombre => {
     const opciones = props.encargados.filter(e => e.nombre.toLowerCase() === nombre.toLowerCase())
     return { nombre, opciones, seleccionadoId: null }
   })
-  fueValidacion.value = false
 
+  fueValidacion.value = false
   paso.value = 2
 }
 
@@ -625,40 +889,58 @@ async function confirmarImportacion() {
 
   importando.value = true
   try {
-    // Create approved new categories
-    for (const cat of categoriasNuevas.value.filter(c => c.aprobada)) {
-      try {
-        await categoriaService.crear({ nombre: cat.nombre, icono: cat.emoji.trim() || null })
-      } catch { /* 409 Conflict = already exists, safe to ignore */ }
-    }
+    // Truly new categories (no similarity matches)
+    for (const cat of categoriasNuevas.value.filter(c => c.aprobada))
+      await categoriaService.crear({ nombre: cat.nombre, icono: cat.emoji.trim() || null }).catch(() => {})
+    // Similar-to-DB but user chose to create new
+    for (const sim of categoriasSimilaresADB.value.filter(s => s.decision === 'nueva'))
+      await categoriaService.crear({ nombre: sim.nombreExcel, icono: sim.emoji?.trim() || null }).catch(() => {})
+    // One category per similarity group (canonical name)
+    for (const grupo of gruposCategoriasSimilares.value)
+      await categoriaService.crear({ nombre: grupo.nombreElegido, icono: grupo.emoji?.trim() || null }).catch(() => {})
 
-    // Create approved new encargados
-    for (const enc of encargadosNuevos.value.filter(e => e.aprobado)) {
-      try {
-        await encargadoService.crear({ nombre: enc.nombre, rol: enc.rol.trim() })
-      } catch { /* 409 Conflict = already exists, safe to ignore */ }
-    }
+    // Truly new encargados
+    for (const enc of encargadosNuevos.value.filter(e => e.aprobado))
+      await encargadoService.crear({ nombre: enc.nombre, rol: enc.rol.trim() }).catch(() => {})
+    // Similar-to-DB but user chose to create new
+    for (const sim of encargadosSimilaresADB.value.filter(s => s.decision === 'nueva'))
+      await encargadoService.crear({ nombre: sim.nombreExcel, rol: sim.rol?.trim() || '' }).catch(() => {})
+    // One encargado per similarity group
+    for (const grupo of gruposEncargadosSimilares.value)
+      await encargadoService.crear({ nombre: grupo.nombreElegido, rol: grupo.rol?.trim() || '' }).catch(() => {})
 
-    // Build map of resolved ambiguous encargados: name.lower → selectedId
+    // Resolved IDs: ambiguous encargados + similar-to-DB with decision='db'
     const resolvedIds = Object.fromEntries(
       encargadosAmbiguos.value
         .filter(e => e.seleccionadoId)
         .map(e => [e.nombre.toLowerCase(), e.seleccionadoId])
     )
+    const dbEncIds = Object.fromEntries(
+      encargadosSimilaresADB.value
+        .filter(s => s.decision === 'db')
+        .map(s => [s.nombreExcel.toLowerCase(), s.encargadoDB.id])
+    )
 
-    const payload = filasAImportar.value.map(f => ({
-      placa:           f.placa,
-      tipoPlaca:       f.tipoPlaca,
-      articulo:        f.articulo,
-      marca:           f.marca,
-      modelo:          f.modelo,
-      numSerial:       f.numSerial,
-      categoriaNombre: f.categoriaNombre,
-      ubicacionActual: f.ubicacionActual,
-      encargadoNombre: f.encargadoNombre,
-      observaciones:   f.observaciones || null,
-      encargadoId:     resolvedIds[f.encargadoNombre?.toLowerCase()] ?? null
-    }))
+    const payload = filasAImportar.value.map(f => {
+      const catCanon = nombreCanonicoCategoria(f.categoriaNombre)
+      const encCanon = nombreCanonicoEncargado(f.encargadoNombre)
+      const encId = resolvedIds[f.encargadoNombre?.toLowerCase()]
+        ?? dbEncIds[f.encargadoNombre?.toLowerCase()]
+        ?? null
+      return {
+        placa:           f.placa,
+        tipoPlaca:       f.tipoPlaca,
+        articulo:        f.articulo,
+        marca:           f.marca,
+        modelo:          f.modelo,
+        numSerial:       f.numSerial,
+        categoriaNombre: catCanon,
+        ubicacionActual: f.ubicacionActual,
+        encargadoNombre: encCanon,
+        observaciones:   f.observaciones || null,
+        encargadoId:     encId
+      }
+    })
 
     const { data } = await activoService.importar(payload)
     resultados.value = data

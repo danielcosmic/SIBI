@@ -26,7 +26,7 @@ public class ActivoController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar(
         [FromQuery] string? busqueda,
-        [FromQuery] int? categoriaId,
+        [FromQuery] int[]? categoriaIds,
         [FromQuery] string? estado,
         [FromQuery] int pagina = 1,
         [FromQuery] int tamano = 20)
@@ -46,8 +46,8 @@ public class ActivoController : ControllerBase
                 a.NumSerial.Contains(busqueda) ||
                 a.Articulo.Contains(busqueda));
 
-        if (categoriaId.HasValue)
-            query = query.Where(a => a.CategoriaId == categoriaId);
+        if (categoriaIds is { Length: > 0 })
+            query = query.Where(a => categoriaIds.Contains(a.CategoriaId));
 
         if (!string.IsNullOrWhiteSpace(estado))
             query = query.Where(a => a.Estado == estado);

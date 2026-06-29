@@ -68,13 +68,49 @@
             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none"
           />
         </div>
-        <select
-          v-model="categoriaId"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none"
-        >
-          <option value="">Todas las categorías</option>
-          <option v-for="cat in categorias" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
-        </select>
+
+        <!-- Multi-select categorías -->
+        <div class="relative" ref="categoriaDropdownRef">
+          <button
+            type="button"
+            @click="categoriaDropdownOpen = !categoriaDropdownOpen"
+            class="w-full px-4 py-2 border rounded-lg outline-none text-left flex items-center justify-between bg-white transition"
+            :class="categoriasIds.length > 0
+              ? 'border-[#0066cc] ring-2 ring-[#0066cc] text-[#003d7a] font-medium'
+              : 'border-gray-300 text-gray-500'"
+          >
+            <span class="truncate text-sm">
+              {{ categoriasIds.length === 0
+                ? 'Todas las categorías'
+                : categoriasIds.length === 1
+                  ? (categorias.find(c => c.id === categoriasIds[0])?.nombre ?? '1 categoría')
+                  : `${categoriasIds.length} categorías seleccionadas` }}
+            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 text-gray-400 transition-transform ml-2" :class="categoriaDropdownOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div
+            v-if="categoriaDropdownOpen"
+            class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          >
+            <label
+              v-for="cat in categorias"
+              :key="cat.id"
+              class="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 cursor-pointer select-none"
+            >
+              <input
+                type="checkbox"
+                :value="cat.id"
+                v-model="categoriasIds"
+                class="w-4 h-4 accent-[#003d7a] rounded border-gray-300 cursor-pointer"
+              />
+              <span class="text-sm text-gray-700">{{ cat.nombre }}</span>
+            </label>
+            <p v-if="categorias.length === 0" class="px-4 py-3 text-sm text-gray-400 text-center">Sin categorías</p>
+          </div>
+        </div>
+
         <select
           v-model="estado"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none"
@@ -84,6 +120,19 @@
           <option value="Mantenimiento">Mantenimiento</option>
           <option value="Desecho">Desecho</option>
         </select>
+      </div>
+
+      <!-- Quitar filtros -->
+      <div v-if="hayFiltros" class="mt-3 flex justify-end">
+        <button
+          @click="quitarFiltros"
+          class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Quitar filtros
+        </button>
       </div>
     </div>
 
@@ -186,7 +235,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDialog } from '@/composables/useDialog'
@@ -205,7 +254,7 @@ const total = ref(0)
 const pagina = ref(1)
 const tamano = ref(10)
 const busqueda = ref('')
-const categoriaId = ref('')
+const categoriasIds = ref([])
 const estado = ref('')
 const categorias = ref([])
 const encargados = ref([])
@@ -214,9 +263,24 @@ const importarOpen = ref(false)
 const modalOpen = ref(false)
 const modalMode = ref('create')
 const activoSeleccionado = ref(null)
+const categoriaDropdownOpen = ref(false)
+const categoriaDropdownRef = ref(null)
 
 const totalPaginas = computed(() => Math.max(1, Math.ceil(total.value / tamano.value)))
 const exportando = ref(false)
+const hayFiltros = computed(() => !!busqueda.value || categoriasIds.value.length > 0 || !!estado.value)
+
+function quitarFiltros() {
+  busqueda.value = ''
+  categoriasIds.value = []
+  estado.value = ''
+}
+
+function handleClickOutside(e) {
+  if (categoriaDropdownRef.value && !categoriaDropdownRef.value.contains(e.target)) {
+    categoriaDropdownOpen.value = false
+  }
+}
 
 const COLUMNAS = ['Placa', 'Tipo Placa', 'Artículo', 'Marca', 'Modelo', 'N° Serial', 'Categoría', 'Ubicación', 'Encargado', 'Estado']
 
@@ -227,7 +291,7 @@ function activoToFila(a) {
 async function obtenerTodosParaExportar() {
   const params = { pagina: 1, tamano: 9999 }
   if (busqueda.value) params.busqueda = busqueda.value
-  if (categoriaId.value) params.categoriaId = categoriaId.value
+  if (categoriasIds.value.length) params.categoriaIds = categoriasIds.value
   if (estado.value) params.estado = estado.value
   const { data } = await activoService.listar(params)
   return data.items
@@ -272,7 +336,9 @@ async function exportarPDF() {
     doc.setTextColor(100)
     const filtros = [
       busqueda.value ? `Búsqueda: "${busqueda.value}"` : null,
-      categoriaId.value ? `Categoría: ${categorias.value.find(c => c.id == categoriaId.value)?.nombre ?? categoriaId.value}` : null,
+      categoriasIds.value.length > 0
+        ? `Categorías: ${categorias.value.filter(c => categoriasIds.value.includes(c.id)).map(c => c.nombre).join(', ')}`
+        : null,
       estado.value ? `Estado: ${estado.value}` : null
     ].filter(Boolean)
     doc.text(`Generado: ${hoy}  ·  Total: ${items.length} activos${filtros.length ? '  ·  Filtros: ' + filtros.join(', ') : ''}`, 14, 22)
@@ -301,7 +367,7 @@ async function cargarActivos() {
   try {
     const params = { pagina: pagina.value, tamano: tamano.value }
     if (busqueda.value) params.busqueda = busqueda.value
-    if (categoriaId.value) params.categoriaId = categoriaId.value
+    if (categoriasIds.value.length) params.categoriaIds = categoriasIds.value
     if (estado.value) params.estado = estado.value
     const { data } = await activoService.listar(params)
     activos.value = data.items
@@ -312,6 +378,7 @@ async function cargarActivos() {
 }
 
 onMounted(async () => {
+  document.addEventListener('mousedown', handleClickOutside)
   if (route.query.busqueda) busqueda.value = route.query.busqueda
   const [catRes, encRes] = await Promise.all([categoriaService.listar(), encargadoService.listar()])
   categorias.value = catRes.data
@@ -319,8 +386,12 @@ onMounted(async () => {
   await cargarActivos()
 })
 
+onUnmounted(() => {
+  document.removeEventListener('mousedown', handleClickOutside)
+})
+
 watch([pagina], cargarActivos)
-watch([busqueda, categoriaId, estado], () => { pagina.value = 1; cargarActivos() })
+watch([busqueda, categoriasIds, estado], () => { pagina.value = 1; cargarActivos() }, { deep: true })
 
 function abrirModal(mode, activo) {
   modalMode.value = mode

@@ -1,7 +1,18 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api'
+  baseURL: '/api',
+  paramsSerializer: (params) => {
+    const parts = []
+    for (const [key, val] of Object.entries(params)) {
+      if (Array.isArray(val)) {
+        val.forEach(v => parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`))
+      } else if (val !== null && val !== undefined && val !== '') {
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
+      }
+    }
+    return parts.join('&')
+  }
 })
 
 api.interceptors.request.use((config) => {
