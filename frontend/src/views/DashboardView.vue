@@ -294,11 +294,17 @@
 
   <ActivoModal
     v-if="modalDashOpen"
-    mode="view"
+    :mode="modalDashMode"
     :activo="activoDashSeleccionado"
-    :categorias="[]"
-    :encargados="[]"
-    @close="modalDashOpen = false"
+    :categorias="categorias"
+    :encargados="encargados"
+    @close="cerrarModalDash"
+    @saved="onDashSaved"
+    @edit="modalDashMode = 'edit'"
+    @solicitar="modalDashMode = 'solicitud'"
+    @cancelEdit="modalDashMode = 'view'"
+    @enviarDesecho="confirmarDesechoDash"
+    @entityCreated="recargarEntidades"
   />
 </template>
 
@@ -309,11 +315,14 @@ import { useAuthStore } from '@/stores/auth'
 import activoService from '@/services/activoService'
 import historialService from '@/services/historialService'
 import encargadoService from '@/services/encargadoService'
+import categoriaService from '@/services/categoriaService'
 import solicitudService from '@/services/solicitudService'
 import ActivoModal from '@/components/ActivoModal.vue'
+import { useDialog } from '@/composables/useDialog'
 
 const router = useRouter()
 const auth = useAuthStore()
+const dialog = useDialog()
 const defaultEmoji = String.fromCodePoint(0x1F4E6)
 const stats = ref({ totalActivos: 0, enDesecho: 0, solicitudesPendientes: 0, porCategoria: [] })
 const totalEncargados = ref(0)
@@ -326,9 +335,20 @@ const actividadSeleccionada = ref(null)
 const activoDetalle = ref(null)
 const cargandoDetalle = ref(false)
 const modalDashOpen = ref(false)
+const modalDashMode = ref('view')
 const activoDashSeleccionado = ref(null)
+const categorias = ref([])
+const encargados = ref([])
 
 onMounted(async () => {
+  const [catRes, encRes] = await Promise.all([
+    categoriaService.listar(),
+    encargadoService.listar()
+  ])
+  categorias.value = catRes.data
+  encargados.value = encRes.data
+  totalEncargados.value = encRes.data.length
+
   if (auth.esJefaAdministrativa) {
     const [statsRes, histRes, solRes] = await Promise.all([
       activoService.stats(),
@@ -339,21 +359,15 @@ onMounted(async () => {
     actividad.value = histRes.data.items
     totalSolicitudes.value = solRes.data.length
   } else if (auth.esInvitado) {
-    const [statsRes, encRes] = await Promise.all([
-      activoService.stats(),
-      encargadoService.listar()
-    ])
+    const statsRes = await activoService.stats()
     stats.value = statsRes.data
-    totalEncargados.value = encRes.data.length
   } else {
-    const [statsRes, histRes, encRes] = await Promise.all([
+    const [statsRes, histRes] = await Promise.all([
       activoService.stats(),
-      historialService.listar({ pagina: 1, tamano: 6 }),
-      encargadoService.listar()
+      historialService.listar({ pagina: 1, tamano: 6 })
     ])
     stats.value = statsRes.data
     actividad.value = histRes.data.items
-    totalEncargados.value = encRes.data.length
   }
 })
 
@@ -438,12 +452,69 @@ async function abrirDetalleActivo(activo) {
   try {
     const res = await activoService.obtener(activo.placa)
     activoDashSeleccionado.value = res.data
-    modalDashOpen.value = true
   } catch {
-    // si falla el fetch, abrir con los datos parciales disponibles
     activoDashSeleccionado.value = activo
-    modalDashOpen.value = true
   }
+  modalDashMode.value = 'view'
+  modalDashOpen.value = true
+}
+
+function cerrarModalDash() {
+  modalDashOpen.value = false
+  modalDashMode.value = 'view'
+}
+
+async function onDashSaved() {
+  const wasSolicitud = modalDashMode.value === 'solicitud'
+  cerrarModalDash()
+  if (wasSolicitud) {
+    await dialog.alert({
+      title: 'Solicitud enviada',
+      message: 'Tu solicitud de cambio fue enviada y está pendiente de revisión por Administradora o GTI.',
+      type: 'info'
+    })
+  } else {
+    const statsRes = await activoService.stats()
+    stats.value = statsRes.data
+  }
+}
+
+async function confirmarDesechoDash(activo) {
+  const ok = await dialog.confirm({
+    title: 'Enviar a Desecho',
+    message: `¿Está seguro de que desea enviar el activo ${activo.placa} a desecho?\n\nEl activo quedará en estado "Desecho" y transcurridos 365 días naturales se habilitará su eliminación permanente del sistema.`,
+    confirmText: 'Enviar a Desecho',
+    type: 'danger'
+  })
+  if (!ok) return
+  try {
+    await activoService.editar(activo.placa, {
+      marca: activo.marca,
+      modelo: activo.modelo,
+      numSerial: activo.numSerial,
+      articulo: activo.articulo,
+      categoriaId: activo.categoriaId,
+      observaciones: activo.observaciones || null,
+      ubicacionActual: activo.ubicacionActual,
+      encargadoId: activo.encargadoActualId,
+      estado: 'Desecho'
+    })
+    cerrarModalDash()
+    const statsRes = await activoService.stats()
+    stats.value = statsRes.data
+  } catch (e) {
+    await dialog.alert({
+      title: 'No se pudo actualizar',
+      message: e.response?.data?.mensaje || 'No se pudo enviar el activo a desecho.',
+      type: 'danger'
+    })
+  }
+}
+
+async function recargarEntidades() {
+  const [catRes, encRes] = await Promise.all([categoriaService.listar(), encargadoService.listar()])
+  categorias.value = catRes.data
+  encargados.value = encRes.data
 }
 </script>
 
