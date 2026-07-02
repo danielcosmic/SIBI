@@ -40,7 +40,7 @@
             <ol class="text-sm text-gray-700 space-y-1 list-decimal list-inside">
               <li>Descarga la plantilla de Excel.</li>
               <li>Completa los datos de cada activo (una fila por activo).</li>
-              <li>El campo <strong>Tipo Placa</strong> debe ser <code class="bg-blue-100 px-1 rounded">Institucional</code> o <code class="bg-blue-100 px-1 rounded">Interno</code>.</li>
+              <li>El campo <strong>Tipo Placa</strong> debe ser <code class="bg-blue-100 px-1 rounded">Institucional</code> o <code class="bg-blue-100 px-1 rounded">Interno</code> / <code class="bg-blue-100 px-1 rounded">Interna</code>.</li>
               <li>No modifiques los encabezados de la plantilla.</li>
             </ol>
             <p class="text-xs text-blue-700 bg-blue-100 rounded-lg px-3 py-2 mt-2">
@@ -753,7 +753,7 @@ async function parsearArchivo() {
     const fila = {
       _idx: i + 2,
       placa:           String(r[0] ?? '').trim(),
-      tipoPlaca:       String(r[1] ?? '').trim(),
+      tipoPlaca:       String(r[1] ?? '').trim().replace(/^Interna$/i, 'Interno'),
       articulo:        String(r[2] ?? '').trim(),
       marca:           String(r[3] ?? '').trim(),
       modelo:          String(r[4] ?? '').trim(),
