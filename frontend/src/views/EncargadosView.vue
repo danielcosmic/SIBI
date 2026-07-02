@@ -83,7 +83,7 @@
 
     <!-- Panel expandible de activos (debajo del grid) -->
     <Transition name="panel-slide">
-      <div v-if="encargadoSeleccionado" class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-200">
+      <div v-if="encargadoSeleccionado" ref="panelActivos" class="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-200">
         <!-- Cabecera del panel -->
         <div class="bg-gradient-to-r from-[#003d7a] to-[#0055a8] text-white px-6 py-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -363,7 +363,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useDialog } from '@/composables/useDialog'
 import encargadoService from '@/services/encargadoService'
@@ -385,6 +385,7 @@ const loading = ref(false)
 const encargadoSeleccionado = ref(null)
 const activosDelEncargado = ref([])
 const cargandoActivos = ref(false)
+const panelActivos = ref(null)
 
 const mostrarModalCrear = ref(false)
 const formCrear = ref({ nombre: '', rol: '' })
@@ -430,6 +431,7 @@ async function seleccionarEncargado(e) {
   encargadoSeleccionado.value = e
   activosDelEncargado.value = []
   cargandoActivos.value = true
+  nextTick(() => panelActivos.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   try {
     const { data } = await encargadoService.activosDe(e.id)
     activosDelEncargado.value = data
