@@ -198,7 +198,9 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1">Placa <span class="text-red-500">*</span></label>
-                  <input v-model="form.placa" type="text" maxlength="8" :disabled="mode !== 'create'" required
+                  <input v-model="form.placa" type="text" maxlength="8"
+                    :disabled="mode !== 'create' && !(mode === 'edit' && (auth.esGTI || auth.esAdministradora))"
+                    required
                     class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500 font-mono"
                     placeholder="UCR12345" />
                 </div>
@@ -566,6 +568,10 @@ async function handleSubmit() {
         encargadoId: form.value.encargadoId
       })
     } else {
+      const placaOriginal = props.activo.placa
+      if (form.value.placa !== placaOriginal) {
+        await activoService.cambiarPlaca(placaOriginal, form.value.placa)
+      }
       await activoService.editar(form.value.placa, {
         marca: form.value.marca,
         modelo: form.value.modelo,

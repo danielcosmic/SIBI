@@ -16,6 +16,9 @@ export default {
   editar: (placa, data) =>
     api.put(`/activo/${placa}`, data),
 
+  cambiarPlaca: (placa, nuevaPlaca) =>
+    api.patch(`/activo/${placa}/cambiar-placa`, { nuevaPlaca }),
+
   eliminar: (placa) =>
     api.delete(`/activo/${placa}`),
 

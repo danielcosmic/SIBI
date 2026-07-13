@@ -398,6 +398,74 @@ public class ActivoController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{placa}/cambiar-placa")]
+    [Authorize(Roles = "GTI,Administradora")]
+    public async Task<IActionResult> CambiarPlaca(string placa, [FromBody] CambiarPlacaRequest request)
+    {
+        var nuevaPlaca = request.NuevaPlaca?.Trim();
+        if (string.IsNullOrWhiteSpace(nuevaPlaca))
+            return BadRequest(new { mensaje = "La nueva placa es obligatoria." });
+
+        if (nuevaPlaca == placa)
+            return BadRequest(new { mensaje = "La nueva placa debe ser diferente a la actual." });
+
+        if (await _db.Activos.AnyAsync(a => a.Placa == nuevaPlaca))
+            return Conflict(new { mensaje = "Ya existe un activo con esa placa." });
+
+        var activo = await _db.Activos.FindAsync(placa);
+        if (activo is null) return NotFound();
+
+        var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            var placaAntigua = await _db.Placas.FindAsync(placa);
+
+            // New Placa entry + new Activo copy
+            _db.Placas.Add(new Placa { Numero = nuevaPlaca, Tipo = placaAntigua?.Tipo ?? "Institucional" });
+            _db.Activos.Add(new Activo
+            {
+                Placa        = nuevaPlaca,
+                Marca        = activo.Marca,
+                Modelo       = activo.Modelo,
+                NumSerial    = activo.NumSerial,
+                Articulo     = activo.Articulo,
+                CategoriaId  = activo.CategoriaId,
+                Observaciones = activo.Observaciones,
+                UbicacionId  = activo.UbicacionId,
+                Estado       = activo.Estado,
+                FechaDesecho = activo.FechaDesecho
+            });
+            await _db.SaveChangesAsync();
+
+            // Re-point dependents to the new placa
+            var historialEntries = await _db.Historial.Where(h => h.ActivoPlaca == placa).ToListAsync();
+            foreach (var h in historialEntries) h.ActivoPlaca = nuevaPlaca;
+
+            var solicitudes = await _db.SolicitudesCambio.Where(s => s.ActivoPlaca == placa).ToListAsync();
+            foreach (var s in solicitudes) s.ActivoPlaca = nuevaPlaca;
+
+            await _db.SaveChangesAsync();
+
+            // Remove old Activo and old Placa (no dependents left)
+            _db.Activos.Remove(activo);
+            if (placaAntigua is not null) _db.Placas.Remove(placaAntigua);
+            await _db.SaveChangesAsync();
+
+            await _historial.RegistrarAsync(nuevaPlaca, correo, "CambioPlaca",
+                $"Placa cambiada de {placa} a {nuevaPlaca}.");
+
+            await tx.CommitAsync();
+            return Ok(new { placa = nuevaPlaca });
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
+    }
+
     [HttpDelete("{placa}")]
     [Authorize(Roles = "Administradora")]
     public async Task<IActionResult> Eliminar(string placa)
@@ -412,10 +480,21 @@ public class ActivoController : ControllerBase
         if (activo.FechaDesecho is null || hoy.DayNumber - activo.FechaDesecho.Value.DayNumber < 365)
             return BadRequest(new { mensaje = "El activo debe llevar al menos 1 año en estado Desecho." });
 
-        var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        await _historial.RegistrarAsync(placa, correo, "Eliminacion", $"Activo {placa} eliminado definitivamente.");
+        // Cargar todas las dependencias antes de encolar los borrados
+        var historialEntries = await _db.Historial
+            .Where(h => h.ActivoPlaca == placa).ToListAsync();
+        var solicitudes = await _db.SolicitudesCambio
+            .Where(s => s.ActivoPlaca == placa).ToListAsync();
+        var placaEntity = await _db.Placas.FindAsync(placa);
+        var ubicacion   = await _db.Ubicaciones.FindAsync(activo.UbicacionId);
 
+        // Encolar borrados: EF ordena los DELETE respetando las FK (dependientes primero)
+        _db.Historial.RemoveRange(historialEntries);
+        _db.SolicitudesCambio.RemoveRange(solicitudes);
         _db.Activos.Remove(activo);
+        if (placaEntity is not null) _db.Placas.Remove(placaEntity);
+        if (ubicacion   is not null) _db.Ubicaciones.Remove(ubicacion);
+
         await _db.SaveChangesAsync();
         return NoContent();
     }
