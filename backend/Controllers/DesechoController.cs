@@ -62,7 +62,18 @@ public class DesechoController : ControllerBase
         var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         await _historial.RegistrarAsync(placa, correo, "Aprobacion", "Eliminación definitiva aprobada.");
 
+        // Load all dependents (including the "Aprobacion" entry just saved) before deleting
+        var historialEntries = await _db.Historial.Where(h => h.ActivoPlaca == placa).ToListAsync();
+        var solicitudes = await _db.SolicitudesCambio.Where(s => s.ActivoPlaca == placa).ToListAsync();
+        var placaEntity = await _db.Placas.FindAsync(placa);
+        var ubicacion   = await _db.Ubicaciones.FindAsync(activo.UbicacionId);
+
+        _db.Historial.RemoveRange(historialEntries);
+        _db.SolicitudesCambio.RemoveRange(solicitudes);
         _db.Activos.Remove(activo);
+        if (placaEntity is not null) _db.Placas.Remove(placaEntity);
+        if (ubicacion   is not null) _db.Ubicaciones.Remove(ubicacion);
+
         await _db.SaveChangesAsync();
         return NoContent();
     }

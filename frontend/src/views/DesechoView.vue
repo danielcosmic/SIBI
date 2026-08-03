@@ -1,8 +1,20 @@
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-3xl font-bold text-[#003d7a]">Gestión de Desecho</h1>
-      <p class="text-gray-600 mt-1">Administra activos en proceso de eliminación</p>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-3xl font-bold text-[#003d7a]">Gestión de Desecho</h1>
+        <p class="text-gray-600 mt-1">Administra activos en proceso de eliminación</p>
+      </div>
+      <button
+        @click="imprimirPDF"
+        :disabled="imprimiendo || items.length === 0"
+        class="border border-red-500 text-red-600 px-4 py-2.5 rounded-lg hover:bg-red-50 transition flex items-center gap-2 font-medium text-sm disabled:opacity-50"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        {{ imprimiendo ? 'Generando...' : 'Imprimir PDF' }}
+      </button>
     </div>
 
     <!-- Alerta -->
@@ -157,13 +169,46 @@
           </div>
           <div class="flex gap-3">
             <button @click="itemSeleccionado = null" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">Cancelar</button>
-            <button @click="confirmarEliminar" :disabled="actionLoading" class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:bg-red-300">
-              {{ actionLoading ? 'Eliminando...' : 'Eliminar Permanentemente' }}
+            <button @click="segundaConfirmacion = true" class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+              Eliminar Permanentemente
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Segunda confirmación (shake) -->
+    <div v-if="segundaConfirmacion" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style="z-index: 10000">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full border-2 border-red-500 shake-dialog">
+          <div class="p-6 text-center space-y-4">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">¿Está absolutamente seguro?</h3>
+            <p class="text-sm text-gray-600">
+              Esta acción es <strong class="text-red-600">permanente e irreversible</strong>.<br/>
+              El activo <strong class="font-mono">{{ itemSeleccionado?.activo.placa }}</strong> será eliminado
+              definitivamente del sistema y no podrá recuperarse.
+            </p>
+            <div class="flex gap-3 pt-1">
+              <button @click="segundaConfirmacion = false"
+                class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium text-sm">
+                No, cancelar
+              </button>
+              <button @click="confirmarEliminar" :disabled="actionLoading"
+                class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm disabled:bg-red-300 flex items-center justify-center gap-2">
+                <svg v-if="actionLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                {{ actionLoading ? 'Eliminando...' : 'Sí, eliminar definitivamente' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </Teleport>
   </div>
 </template>
@@ -194,7 +239,9 @@ const itemsFiltrados = computed(() => {
 })
 const loading = ref(false)
 const itemSeleccionado = ref(null)
+const segundaConfirmacion = ref(false)
 const actionLoading = ref(false)
+const imprimiendo = ref(false)
 
 onMounted(cargar)
 
@@ -210,9 +257,11 @@ async function confirmarEliminar() {
   actionLoading.value = true
   try {
     await desechoService.aprobar(itemSeleccionado.value.activo.placa)
+    segundaConfirmacion.value = false
     itemSeleccionado.value = null
     await cargar()
   } catch (e) {
+    segundaConfirmacion.value = false
     await dialog.alert({
       title: 'Error al eliminar',
       message: e.response?.data?.mensaje || 'No se pudo completar la eliminación.',
@@ -248,4 +297,94 @@ function formatFecha(f) {
   if (!f) return ''
   return new Date(f).toLocaleDateString('es-CR')
 }
+
+async function imprimirPDF() {
+  imprimiendo.value = true
+  try {
+    const { jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const hoy = new Date().toLocaleDateString('es-CR')
+    const lista = itemsFiltrados.value
+
+    doc.setFontSize(14)
+    doc.setTextColor(0, 61, 122)
+    doc.text('Activos en Desecho · SIBI EIC UCR', 14, 16)
+
+    doc.setFontSize(9)
+    doc.setTextColor(100)
+    const subtitulo = `Generado: ${hoy}  ·  Total: ${lista.length} activo${lista.length !== 1 ? 's' : ''}${busqueda.value ? `  ·  Filtro: "${busqueda.value}"` : ''}`
+    doc.text(subtitulo, 14, 22)
+
+    autoTable(doc, {
+      head: [['Placa', 'Artículo', 'Marca / Modelo', 'Categoría', 'Encargado', 'Ubicación', 'Fecha Desecho', 'Días', 'Estado']],
+      body: lista.map(({ activo: a, diasEnDesecho, puedeEliminar }) => [
+        a.placa,
+        a.articulo,
+        `${a.marca} ${a.modelo}`,
+        a.categoriaNombre,
+        a.encargadoActual,
+        a.ubicacionActual,
+        formatFecha(a.fechaDesecho),
+        String(diasEnDesecho),
+        puedeEliminar ? 'Listo para eliminar' : `${365 - diasEnDesecho} días restantes`
+      ]),
+      startY: 27,
+      styles: { fontSize: 7.5, cellPadding: 2 },
+      headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [255, 245, 245] },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 12 },
+        8: { cellWidth: 33 }
+      },
+      didDrawCell(data) {
+        if (data.section === 'body' && data.column.index === 8) {
+          const val = data.cell.text[0]
+          if (val === 'Listo para eliminar') {
+            doc.setTextColor(21, 128, 61)
+          } else {
+            doc.setTextColor(161, 98, 7)
+          }
+        }
+      },
+      didParseCell(data) {
+        if (data.section === 'body' && data.column.index === 8) {
+          const val = data.cell.text[0]
+          data.cell.styles.textColor = val === 'Listo para eliminar' ? [21, 128, 61] : [161, 98, 7]
+          data.cell.styles.fontStyle = 'bold'
+        }
+      }
+    })
+
+    const fecha = new Date().toISOString().slice(0, 10)
+    doc.save(`desecho_${fecha}.pdf`)
+  } finally {
+    imprimiendo.value = false
+  }
+}
 </script>
+
+<style scoped>
+@keyframes shake {
+  0%   { transform: translateX(0) rotate(0deg); }
+  15%  { transform: translateX(-8px) rotate(-1deg); }
+  30%  { transform: translateX(8px) rotate(1deg); }
+  45%  { transform: translateX(-6px) rotate(-0.5deg); }
+  60%  { transform: translateX(6px) rotate(0.5deg); }
+  75%  { transform: translateX(-3px) rotate(0deg); }
+  90%  { transform: translateX(3px) rotate(0deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+.shake-dialog {
+  animation: shake 0.55s ease-in-out;
+}
+</style>

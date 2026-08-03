@@ -19,7 +19,7 @@
       </div>
 
       <!-- ── MODO VIEW: tarjetas detalladas ── -->
-      <template v-if="mode === 'view'">
+      <template v-if="mode === 'view' && !mostrandoConfirmacion">
         <div class="overflow-y-auto flex-1 p-4 space-y-3">
 
           <!-- Banner de solicitud pendiente (solo JefaAdministrativa) -->
@@ -144,6 +144,18 @@
             class="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
             Cerrar
           </button>
+          <button
+            v-if="puedeEliminarReciente && (auth.esGTI || auth.esAdministradora || auth.esJefaAdministrativa)"
+            type="button"
+            @click="eliminarReciente"
+            :disabled="eliminando"
+            class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm disabled:bg-gray-400 flex items-center gap-1.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {{ eliminando ? 'Eliminando...' : `Eliminar (${tiempoRestanteElim})` }}
+          </button>
           <button v-if="!auth.esInvitado" type="button" @click="router.push('/activo/' + props.activo?.placa); $emit('close')"
             class="flex items-center gap-1.5 px-4 py-2.5 text-[#0066cc] border border-[#0066cc]/30 rounded-lg hover:bg-blue-50 transition font-medium text-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,7 +186,7 @@
             Solicitar Cambio
           </button>
           <button
-            v-if="auth.esGTI"
+            v-if="auth.esGTI && props.activo?.estado !== 'Desecho'"
             type="button"
             @click="$emit('edit')"
             class="flex-1 px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium flex items-center justify-center gap-2"
@@ -187,201 +199,383 @@
         </div>
       </template>
 
-      <!-- ── MODO CREATE / EDIT / SOLICITUD: formulario ── -->
-      <template v-else>
-        <div class="overflow-y-auto flex-1 p-6 space-y-6">
+      <!-- ── Resumen de confirmación (solo create) ── -->
+      <template v-else-if="mode === 'create' && mostrandoConfirmacion">
+          <div class="overflow-y-auto flex-1 p-4 space-y-3">
+            <p class="text-sm text-gray-500 px-1">Revisa los datos antes de confirmar la creación.</p>
 
-          <!-- Identificación -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Identificación</p>
-            <div class="bg-gray-50/70 rounded-xl p-4 space-y-3">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Placa <span class="text-red-500">*</span></label>
-                  <input v-model="form.placa" type="text" maxlength="8"
-                    :disabled="mode !== 'create' && !(mode === 'edit' && (auth.esGTI || auth.esAdministradora))"
-                    required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500 font-mono"
-                    placeholder="UCR12345" />
+            <!-- Identificación -->
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Identificación</p>
+              <div class="grid grid-cols-2 gap-3 p-4">
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Placa</p>
+                  <p class="font-semibold text-[#003d7a] font-mono">{{ form.placa }}</p>
                 </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de Placa <span class="text-red-500">*</span></label>
-                  <select v-model="form.tipoPlaca" required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white">
-                    <option value="Institucional">Institucional</option>
-                    <option value="Interno">Interno</option>
-                  </select>
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Tipo de Placa</p>
+                  <p class="font-medium text-gray-800">{{ form.tipoPlaca }}</p>
                 </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Artículo <span class="text-red-500">*</span></label>
-                  <input v-model="form.articulo" type="text" maxlength="20" required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Artículo</p>
+                  <p class="font-medium text-gray-800">{{ form.articulo }}</p>
                 </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Número Serial <span class="text-red-500">*</span></label>
-                  <input v-model="form.numSerial" type="text" maxlength="30" required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white font-mono" />
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Número Serial</p>
+                  <p class="font-medium text-gray-800 font-mono text-sm">{{ form.numSerial }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Marca</p>
+                  <p class="font-medium text-gray-800">{{ form.marca }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Modelo</p>
+                  <p class="font-medium text-gray-800">{{ form.modelo }}</p>
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Marca <span class="text-red-500">*</span></label>
-                  <input v-model="form.marca" type="text" maxlength="30" required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+            </div>
+
+            <!-- Clasificación -->
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Clasificación</p>
+              <div class="p-4">
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Categoría</p>
+                  <p class="font-medium text-gray-800">{{ confirmCategoria }}</p>
                 </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Modelo <span class="text-red-500">*</span></label>
-                  <input v-model="form.modelo" type="text" maxlength="20" required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+              </div>
+            </div>
+
+            <!-- Ubicación y Responsable -->
+            <div class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Ubicación y Responsable</p>
+              <div class="grid grid-cols-2 gap-3 p-4">
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Ubicación Actual</p>
+                  <p class="font-medium text-gray-800">{{ form.ubicacionActual }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-xs text-gray-400 mb-0.5">Encargado</p>
+                  <p class="font-medium text-gray-800">{{ confirmEncargado }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div v-if="form.observaciones?.trim()" class="rounded-xl border border-gray-200 overflow-hidden">
+              <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Observaciones</p>
+              <div class="p-4 bg-gray-50">
+                <p class="text-sm text-gray-700">{{ form.observaciones }}</p>
+              </div>
+            </div>
+
+            <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">{{ error }}</p>
+          </div>
+
+          <!-- Footer confirmación -->
+          <div class="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+            <button type="button" @click="mostrandoConfirmacion = false"
+              class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+              Editar
+            </button>
+            <button @click="confirmarCreacion = true" :disabled="loading"
+              class="flex-1 px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium disabled:bg-gray-400 flex items-center justify-center gap-2">
+              Confirmar y Crear
+            </button>
+          </div>
+        </template>
+
+      <!-- ── Resumen de solicitud de cambio ── -->
+      <template v-else-if="mode === 'solicitud' && mostrandoConfirmacion">
+        <div class="overflow-y-auto flex-1 p-4 space-y-3">
+          <p class="text-sm text-gray-500 px-1">Revisa los cambios que se solicitarán a Administradora o GTI.</p>
+
+          <!-- Activo -->
+          <div class="rounded-xl border border-gray-200 overflow-hidden">
+            <p class="text-[11px] font-semibold text-[#003d7a] uppercase tracking-widest bg-blue-100 border-b border-blue-200 px-4 py-2">Activo</p>
+            <div class="p-4">
+              <div class="bg-gray-50 rounded-lg p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Placa</p>
+                <p class="font-semibold text-[#003d7a] font-mono">{{ props.activo?.placa }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cambios solicitados -->
+          <div class="rounded-xl border border-amber-200 overflow-hidden">
+            <p class="text-[11px] font-semibold text-amber-700 uppercase tracking-widest bg-amber-50 border-b border-amber-200 px-4 py-2">Cambios solicitados</p>
+            <div class="divide-y divide-gray-100">
+              <div v-for="c in camposFormCambiados" :key="c.label" class="px-4 py-3 flex items-start gap-3">
+                <span class="text-xs font-semibold text-gray-500 w-28 flex-shrink-0 pt-0.5">{{ c.label }}</span>
+                <div class="flex items-center gap-2 flex-wrap text-sm min-w-0">
+                  <span class="line-through text-gray-400 truncate">{{ c.actual }}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span class="font-medium text-amber-800 truncate">{{ c.propuesto }}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Clasificación -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Clasificación</p>
-            <div class="bg-gray-50/70 rounded-xl p-4">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Categoría <span class="text-red-500">*</span></label>
-                  <SearchableSelect v-model="form.categoriaId" :options="categoriasOptions" placeholder="Buscar categoría..." />
-                  <div v-if="showNuevaCategoria" class="mt-2 bg-white border border-blue-200 rounded-lg p-3 space-y-2">
-                    <div class="flex gap-2">
-                      <input v-model="nuevaCategoria.nombre" type="text" placeholder="Nombre de la categoría"
-                        class="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]"
-                        @keydown.enter.prevent="nuevaCategoria.nombre.trim() && !creandoCategoria && crearCategoria()" />
-                      <input v-model="nuevaCategoria.emoji" type="text" maxlength="2" placeholder="🗂️"
-                        class="w-12 text-center px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
-                    </div>
-                    <p v-if="errorCategoria" class="text-xs text-red-600">{{ errorCategoria }}</p>
-                    <div class="flex gap-2">
-                      <button type="button" @click="crearCategoria"
-                        :disabled="!nuevaCategoria.nombre.trim() || creandoCategoria"
-                        class="flex-1 py-1.5 text-xs bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-300">
-                        {{ creandoCategoria ? 'Creando...' : 'Crear categoría' }}
-                      </button>
-                      <button type="button" @click="showNuevaCategoria = false; errorCategoria = ''"
-                        class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 transition text-gray-600">
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                  <button v-else-if="auth.esAdministradora" type="button" @click="showNuevaCategoria = true"
-                    class="mt-1.5 flex items-center gap-1 text-xs text-[#0066cc] hover:text-[#003d7a] transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Nueva categoría
-                  </button>
-                </div>
-                <div v-if="mode !== 'create'">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
-                  <select v-model="form.estado"
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white">
-                    <option value="Activo">Activo</option>
-                    <option value="Mantenimiento">Mantenimiento</option>
-                    <option value="Desecho">Desecho</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Ubicación y Responsable -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Ubicación y Responsable</p>
-            <div class="bg-gray-50/70 rounded-xl p-4">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Ubicación Actual <span class="text-red-500">*</span></label>
-                  <input v-model="form.ubicacionActual" type="text" maxlength="30" required
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Encargado <span class="text-red-500">*</span></label>
-                  <SearchableSelect v-model="form.encargadoId" :options="encargadosOptions" placeholder="Buscar encargado..." />
-                  <div v-if="showNuevoEncargado" class="mt-2 bg-white border border-blue-200 rounded-lg p-3 space-y-2">
-                    <div class="flex flex-col gap-2">
-                      <input v-model="nuevoEncargado.nombre" type="text" placeholder="Nombre del encargado"
-                        class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
-                      <input v-model="nuevoEncargado.rol" type="text" placeholder="Cargo o rol"
-                        class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]"
-                        @keydown.enter.prevent="nuevoEncargado.nombre.trim() && nuevoEncargado.rol.trim() && !creandoEncargado && crearEncargado()" />
-                    </div>
-                    <p v-if="errorEncargado" class="text-xs text-red-600">{{ errorEncargado }}</p>
-                    <div class="flex gap-2">
-                      <button type="button" @click="crearEncargado"
-                        :disabled="!nuevoEncargado.nombre.trim() || !nuevoEncargado.rol.trim() || creandoEncargado"
-                        class="flex-1 py-1.5 text-xs bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-300">
-                        {{ creandoEncargado ? 'Creando...' : 'Crear encargado' }}
-                      </button>
-                      <button type="button" @click="showNuevoEncargado = false; errorEncargado = ''"
-                        class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 transition text-gray-600">
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                  <button v-else-if="auth.esGTI || auth.esAdministradora" type="button" @click="showNuevoEncargado = true"
-                    class="mt-1.5 flex items-center gap-1 text-xs text-[#0066cc] hover:text-[#003d7a] transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Nuevo encargado
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Observaciones -->
-          <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Observaciones</p>
-            <div class="bg-gray-50/70 rounded-xl p-4">
-              <textarea v-model="form.observaciones" maxlength="200" rows="3"
-                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none resize-none bg-white"
-                placeholder="Notas adicionales sobre el activo..." />
-              <p class="text-xs text-gray-400 mt-1 text-right">{{ (form.observaciones || '').length }}/200</p>
-            </div>
+          <!-- Aviso -->
+          <div class="mx-1 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+            Los cambios serán enviados para revisión y no se aplicarán hasta ser aprobados.
           </div>
 
           <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">{{ error }}</p>
         </div>
 
-        <!-- Aviso modo solicitud -->
-        <div v-if="mode === 'solicitud'" class="mx-6 mb-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-          Los cambios propuestos serán enviados para revisión y no se aplicarán hasta ser aprobados por Administradora o GTI.
-        </div>
-
-        <!-- Footer create/edit/solicitud -->
+        <!-- Footer solicitud resumen -->
         <div class="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
-          <button type="button" @click="mode === 'edit' || mode === 'solicitud' ? $emit('cancelEdit') : $emit('close')"
+          <button type="button" @click="mostrandoConfirmacion = false"
             class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
-            Cancelar
+            Editar
           </button>
           <button @click="handleSubmit" :disabled="loading"
-            :class="mode === 'solicitud'
-              ? 'bg-amber-500 hover:bg-amber-600'
-              : 'bg-[#003d7a] hover:bg-[#002d5a]'"
-            class="flex-1 px-4 py-2.5 text-white rounded-lg transition font-medium disabled:bg-gray-400 flex items-center justify-center gap-2">
+            class="flex-1 px-4 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium disabled:bg-gray-400 flex items-center justify-center gap-2">
             <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
             </svg>
-            {{ loading ? (mode === 'solicitud' ? 'Enviando...' : 'Guardando...') : mode === 'create' ? 'Crear Activo' : mode === 'solicitud' ? 'Enviar Solicitud' : 'Guardar Cambios' }}
+            {{ loading ? 'Enviando...' : 'Confirmar y Enviar' }}
           </button>
         </div>
       </template>
 
+      <!-- ── MODO CREATE / EDIT / SOLICITUD: formulario ── -->
+      <template v-else>
+          <div class="overflow-y-auto flex-1 p-6 space-y-6">
+
+            <!-- Identificación -->
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Identificación</p>
+              <div class="bg-gray-50/70 rounded-xl p-4 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Placa <span class="text-red-500">*</span></label>
+                    <input v-model="form.placa" type="text" maxlength="8"
+                      :disabled="mode !== 'create' && !(mode === 'edit' && (auth.esGTI || auth.esAdministradora))"
+                      required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500 font-mono"
+                      placeholder="UCR12345" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de Placa <span class="text-red-500">*</span></label>
+                    <select v-model="form.tipoPlaca" required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white">
+                      <option value="Institucional">Institucional</option>
+                      <option value="Interno">Interno</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Artículo <span class="text-red-500">*</span></label>
+                    <input v-model="form.articulo" type="text" maxlength="20" required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Número Serial <span class="text-red-500">*</span></label>
+                    <input v-model="form.numSerial" type="text" maxlength="30" required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white font-mono" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Marca <span class="text-red-500">*</span></label>
+                    <input v-model="form.marca" type="text" maxlength="30" required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Modelo <span class="text-red-500">*</span></label>
+                    <input v-model="form.modelo" type="text" maxlength="20" required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clasificación -->
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Clasificación</p>
+              <div class="bg-gray-50/70 rounded-xl p-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Categoría <span class="text-red-500">*</span></label>
+                    <SearchableSelect v-model="form.categoriaId" :options="categoriasOptions" placeholder="Buscar categoría..." />
+                    <div v-if="showNuevaCategoria" class="mt-2 bg-white border border-blue-200 rounded-lg p-3 space-y-2">
+                      <div class="flex gap-2">
+                        <input v-model="nuevaCategoria.nombre" type="text" placeholder="Nombre de la categoría"
+                          class="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]"
+                          @keydown.enter.prevent="nuevaCategoria.nombre.trim() && !creandoCategoria && crearCategoria()" />
+                        <input v-model="nuevaCategoria.emoji" type="text" maxlength="2" placeholder="🗂️"
+                          class="w-12 text-center px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
+                      </div>
+                      <p v-if="errorCategoria" class="text-xs text-red-600">{{ errorCategoria }}</p>
+                      <div class="flex gap-2">
+                        <button type="button" @click="crearCategoria"
+                          :disabled="!nuevaCategoria.nombre.trim() || creandoCategoria"
+                          class="flex-1 py-1.5 text-xs bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-300">
+                          {{ creandoCategoria ? 'Creando...' : 'Crear categoría' }}
+                        </button>
+                        <button type="button" @click="showNuevaCategoria = false; errorCategoria = ''"
+                          class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 transition text-gray-600">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                    <button v-else-if="auth.esAdministradora" type="button" @click="showNuevaCategoria = true"
+                      class="mt-1.5 flex items-center gap-1 text-xs text-[#0066cc] hover:text-[#003d7a] transition">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Nueva categoría
+                    </button>
+                  </div>
+                  <div v-if="mode !== 'create'">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
+                    <select v-model="form.estado"
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white">
+                      <option value="Activo">Activo</option>
+                      <option value="Mantenimiento">Mantenimiento</option>
+                      <option value="Desecho">Desecho</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ubicación y Responsable -->
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Ubicación y Responsable</p>
+              <div class="bg-gray-50/70 rounded-xl p-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Ubicación Actual <span class="text-red-500">*</span></label>
+                    <input v-model="form.ubicacionActual" type="text" maxlength="30" required
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none bg-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Encargado <span class="text-red-500">*</span></label>
+                    <SearchableSelect v-model="form.encargadoId" :options="encargadosOptions" placeholder="Buscar encargado..." />
+                    <div v-if="showNuevoEncargado" class="mt-2 bg-white border border-blue-200 rounded-lg p-3 space-y-2">
+                      <div class="flex flex-col gap-2">
+                        <input v-model="nuevoEncargado.nombre" type="text" placeholder="Nombre del encargado"
+                          class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]" />
+                        <input v-model="nuevoEncargado.rol" type="text" placeholder="Cargo o rol"
+                          class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#003d7a]"
+                          @keydown.enter.prevent="nuevoEncargado.nombre.trim() && nuevoEncargado.rol.trim() && !creandoEncargado && crearEncargado()" />
+                      </div>
+                      <p v-if="errorEncargado" class="text-xs text-red-600">{{ errorEncargado }}</p>
+                      <div class="flex gap-2">
+                        <button type="button" @click="crearEncargado"
+                          :disabled="!nuevoEncargado.nombre.trim() || !nuevoEncargado.rol.trim() || creandoEncargado"
+                          class="flex-1 py-1.5 text-xs bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition disabled:bg-gray-300">
+                          {{ creandoEncargado ? 'Creando...' : 'Crear encargado' }}
+                        </button>
+                        <button type="button" @click="showNuevoEncargado = false; errorEncargado = ''"
+                          class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 transition text-gray-600">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                    <button v-else-if="auth.esGTI || auth.esAdministradora || auth.esJefaAdministrativa" type="button" @click="showNuevoEncargado = true"
+                      class="mt-1.5 flex items-center gap-1 text-xs text-[#0066cc] hover:text-[#003d7a] transition">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Nuevo encargado
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Observaciones</p>
+              <div class="bg-gray-50/70 rounded-xl p-4">
+                <textarea v-model="form.observaciones" maxlength="200" rows="3"
+                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-transparent outline-none resize-none bg-white"
+                  placeholder="Notas adicionales sobre el activo..." />
+                <p class="text-xs text-gray-400 mt-1 text-right">{{ (form.observaciones || '').length }}/200</p>
+              </div>
+            </div>
+
+            <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">{{ error }}</p>
+          </div>
+
+          <!-- Aviso modo solicitud -->
+          <div v-if="mode === 'solicitud'" class="mx-6 mb-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+            Los cambios propuestos serán enviados para revisión y no se aplicarán hasta ser aprobados por Administradora o GTI.
+          </div>
+
+          <!-- Aviso sin cambios (solo edit) -->
+          <p v-if="(mode === 'edit' || mode === 'solicitud') && !hayModificaciones" class="mx-6 mb-2 text-xs text-gray-400 text-center">
+            No se han realizado cambios.
+          </p>
+
+          <!-- Footer create/edit/solicitud -->
+          <div class="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+            <button type="button" @click="mode === 'edit' || mode === 'solicitud' ? $emit('cancelEdit') : $emit('close')"
+              class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+              Cancelar
+            </button>
+            <button @click="mode === 'create' ? abrirConfirmacion() : mode === 'solicitud' ? abrirResumenSolicitud() : handleSubmit()"
+              :disabled="loading || ((mode === 'edit' || mode === 'solicitud') && !hayModificaciones)"
+              :class="mode === 'solicitud'
+                ? 'bg-amber-500 hover:bg-amber-600'
+                : 'bg-[#003d7a] hover:bg-[#002d5a]'"
+              class="flex-1 px-4 py-2.5 text-white rounded-lg transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+              </svg>
+              {{ loading ? (mode === 'solicitud' ? 'Enviando...' : 'Guardando...') : mode === 'create' ? 'Crear Activo' : mode === 'solicitud' ? 'Enviar Solicitud' : 'Guardar Cambios' }}
+            </button>
+          </div>
+
+      </template>
+
+    </div>
+  </div>
+
+  <!-- Segunda confirmación de creación -->
+  <div v-if="confirmarCreacion" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 10000">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200">
+      <div class="bg-[#003d7a] text-white px-6 py-4 rounded-t-2xl">
+        <h3 class="text-lg font-bold">¿Confirmar creación?</h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-gray-700">
+          Se creará el activo <strong class="font-mono text-[#003d7a]">{{ form.placa }}</strong>
+          — <strong>{{ form.articulo }}</strong> ({{ form.marca }} {{ form.modelo }}).
+          ¿Desea continuar?
+        </p>
+        <p v-if="error" class="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">{{ error }}</p>
+        <div class="flex gap-3">
+          <button type="button" @click="confirmarCreacion = false"
+            class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium text-sm">
+            Cancelar
+          </button>
+          <button type="button" @click="handleSubmit" :disabled="loading"
+            class="flex-1 px-4 py-2.5 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium text-sm disabled:bg-gray-400 flex items-center justify-center gap-2">
+            <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            {{ loading ? 'Creando...' : 'Sí, crear activo' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
   </Teleport>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import activoService from '@/services/activoService'
 import solicitudService from '@/services/solicitudService'
@@ -483,6 +677,48 @@ async function crearEncargado() {
   }
 }
 
+// ── Eliminación dentro de los primeros 10 minutos ──
+const now = ref(Date.now())
+let tickInterval = null
+
+watch(() => props.activo?.fechaCreacion, (fc) => {
+  clearInterval(tickInterval)
+  if (!fc) return
+  tickInterval = setInterval(() => {
+    now.value = Date.now()
+    if (!puedeEliminarReciente.value) clearInterval(tickInterval)
+  }, 1000)
+}, { immediate: true })
+
+onUnmounted(() => clearInterval(tickInterval))
+
+const tiempoRestanteElim = computed(() => {
+  if (!props.activo?.fechaCreacion) return null
+  const ms = 10 * 60 * 1000 - (now.value - new Date(props.activo.fechaCreacion).getTime())
+  if (ms <= 0) return null
+  const secs = Math.ceil(ms / 1000)
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+})
+
+const puedeEliminarReciente = computed(() => tiempoRestanteElim.value !== null)
+
+const eliminando = ref(false)
+async function eliminarReciente() {
+  eliminando.value = true
+  try {
+    await activoService.eliminarReciente(props.activo.placa)
+    emit('saved')
+  } catch (e) {
+    error.value = e.response?.data?.mensaje || 'No se pudo eliminar el activo.'
+  } finally {
+    eliminando.value = false
+  }
+}
+
+// ── Confirmación de creación ──
+const mostrandoConfirmacion = ref(false)
+const confirmarCreacion = ref(false)
+
 const loading = ref(false)
 const error = ref('')
 
@@ -501,6 +737,8 @@ const form = ref({
 })
 
 watch(() => props.activo, (activo) => {
+  mostrandoConfirmacion.value = false
+  confirmarCreacion.value = false
   if (activo) {
     form.value = {
       placa: activo.placa,
@@ -536,6 +774,71 @@ const camposCambiados = computed(() => {
   if (d.estado !== a.estado)               cambios.push({ label: 'Estado',     actual: a.estado,           propuesto: d.estado })
   return cambios
 })
+
+// ── Detección de cambios en modo edición/solicitud ──
+const hayModificaciones = computed(() => {
+  if ((props.mode !== 'edit' && props.mode !== 'solicitud') || !props.activo) return true
+  const a = props.activo
+  const f = form.value
+  const camposComunes =
+    f.marca !== (a.marca ?? '') ||
+    f.modelo !== (a.modelo ?? '') ||
+    f.numSerial !== (a.numSerial ?? '') ||
+    f.articulo !== (a.articulo ?? '') ||
+    Number(f.categoriaId) !== a.categoriaId ||
+    (f.observaciones || '') !== (a.observaciones || '') ||
+    f.ubicacionActual !== (a.ubicacionActual ?? '') ||
+    String(f.encargadoId) !== String(a.encargadoActualId) ||
+    f.estado !== a.estado
+  return props.mode === 'edit' ? (f.placa !== a.placa || camposComunes) : camposComunes
+})
+
+// Changed fields summary for solicitud mode (old → new display values)
+const camposFormCambiados = computed(() => {
+  if (props.mode !== 'solicitud' || !props.activo) return []
+  const a = props.activo
+  const f = form.value
+  const changes = []
+  const catLabel = categoriasOptions.value.find(o => String(o.value) === String(f.categoriaId))?.label ?? '—'
+  const catActual = categoriasOptions.value.find(o => String(o.value) === String(a.categoriaId))?.label ?? a.categoriaNombre ?? '—'
+  const encLabel  = encargadosOptions.value.find(o => String(o.value) === String(f.encargadoId))?.label ?? '—'
+  const encActual = encargadosOptions.value.find(o => String(o.value) === String(a.encargadoActualId))?.label ?? a.encargadoActual ?? '—'
+  if (f.articulo !== (a.articulo ?? ''))          changes.push({ label: 'Artículo',   actual: a.articulo ?? '—',        propuesto: f.articulo })
+  if (f.marca    !== (a.marca    ?? ''))          changes.push({ label: 'Marca',      actual: a.marca    ?? '—',        propuesto: f.marca })
+  if (f.modelo   !== (a.modelo   ?? ''))          changes.push({ label: 'Modelo',     actual: a.modelo   ?? '—',        propuesto: f.modelo })
+  if (f.numSerial !== (a.numSerial ?? ''))        changes.push({ label: 'N° Serial',  actual: a.numSerial ?? '—',       propuesto: f.numSerial })
+  if (Number(f.categoriaId) !== a.categoriaId)   changes.push({ label: 'Categoría',  actual: catActual,                propuesto: catLabel })
+  if ((f.observaciones || '') !== (a.observaciones || '')) changes.push({ label: 'Observaciones', actual: a.observaciones || '(sin observaciones)', propuesto: f.observaciones || '(sin observaciones)' })
+  if (f.ubicacionActual !== (a.ubicacionActual ?? '')) changes.push({ label: 'Ubicación',   actual: a.ubicacionActual ?? '—', propuesto: f.ubicacionActual })
+  if (String(f.encargadoId) !== String(a.encargadoActualId)) changes.push({ label: 'Encargado', actual: encActual, propuesto: encLabel })
+  if (f.estado !== a.estado)                     changes.push({ label: 'Estado',     actual: a.estado,                 propuesto: f.estado })
+  return changes
+})
+
+const confirmCategoria = computed(() =>
+  categoriasOptions.value.find(o => String(o.value) === String(form.value.categoriaId))?.label ?? '—'
+)
+const confirmEncargado = computed(() =>
+  encargadosOptions.value.find(o => String(o.value) === String(form.value.encargadoId))?.label ?? '—'
+)
+
+function abrirConfirmacion() {
+  error.value = ''
+  if (!form.value.placa?.trim())          { error.value = 'La placa es obligatoria.'; return }
+  if (!form.value.articulo?.trim())       { error.value = 'El artículo es obligatorio.'; return }
+  if (!form.value.numSerial?.trim())      { error.value = 'El número serial es obligatorio.'; return }
+  if (!form.value.marca?.trim())          { error.value = 'La marca es obligatoria.'; return }
+  if (!form.value.modelo?.trim())         { error.value = 'El modelo es obligatorio.'; return }
+  if (!form.value.categoriaId)            { error.value = 'La categoría es obligatoria.'; return }
+  if (!form.value.ubicacionActual?.trim()) { error.value = 'La ubicación actual es obligatoria.'; return }
+  if (!form.value.encargadoId)            { error.value = 'El encargado es obligatorio.'; return }
+  mostrandoConfirmacion.value = true
+}
+
+function abrirResumenSolicitud() {
+  error.value = ''
+  mostrandoConfirmacion.value = true
+}
 
 async function handleSubmit() {
   error.value = ''
@@ -587,6 +890,7 @@ async function handleSubmit() {
     emit('saved')
   } catch (e) {
     error.value = e.response?.data?.mensaje || (props.mode === 'solicitud' ? 'Error al enviar la solicitud.' : 'Error al guardar el activo.')
+    if (props.mode === 'solicitud') mostrandoConfirmacion.value = true
   } finally {
     loading.value = false
   }

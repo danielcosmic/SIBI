@@ -13,21 +13,49 @@
 
         <hr class="border-gray-100 mb-6" />
 
-        <!-- Error de credenciales -->
+        <!-- Estado de error: reemplaza el formulario -->
         <Transition name="fade-error">
-          <div v-if="error" class="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p class="text-sm text-red-700 font-medium">{{ error }}</p>
+          <div v-if="error" class="space-y-5">
+            <div class="p-5 bg-red-50 border border-red-200 rounded-xl space-y-4 text-center">
+              <div class="flex justify-center">
+                <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <p class="text-base font-semibold text-red-700">Credenciales incorrectas</p>
+                <p class="text-sm text-red-600 mt-1">El correo o la contraseña no son válidos.</p>
+              </div>
+              <p class="text-xs text-gray-400">Intento {{ intentos }} de 3</p>
+            </div>
+
+            <div class="flex gap-3">
+              <button type="button" @click="reintentar(false)"
+                class="flex-1 py-2.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">
+                Cambiar cuenta
+              </button>
+              <button type="button" @click="reintentar(true)"
+                class="flex-1 py-2.5 text-sm font-medium rounded-lg bg-[#003d7a] text-white hover:bg-[#002d5a] transition"
+                :disabled="intentos >= 3">
+                Volver a intentar
+              </button>
+            </div>
+
+            <div v-if="intentos >= 3" class="text-center text-sm text-red-600 font-medium">
+              Demasiados intentos fallidos.
+              <RouterLink to="/recuperar-contrasena" class="underline text-[#0066cc]">Recuperar contraseña</RouterLink>
+            </div>
           </div>
         </Transition>
 
-        <!-- Form -->
-        <form @submit.prevent="handleSubmit" class="space-y-5">
+        <!-- Form: oculto mientras hay un error activo -->
+        <form v-if="!error" @submit.prevent="handleSubmit" class="space-y-5">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Correo Institucional</label>
             <input
+              ref="correoInput"
               v-model="correo"
               type="email"
               placeholder="usuario@ucr.ac.cr"
@@ -103,7 +131,7 @@
           </button>
         </form>
 
-        <div class="mt-5 flex items-center justify-between text-xs text-gray-400">
+        <div v-if="!error" class="mt-5 flex items-center justify-between text-xs text-gray-400">
           <span>Intentos: {{ intentos }}/3</span>
           <RouterLink to="/recuperar-contrasena" class="text-[#0066cc] hover:underline">
             ¿Olvidaste tu contraseña?
@@ -119,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/authService'
@@ -133,6 +161,7 @@ const correo = ref('')
 const contrasena = ref('')
 const mostrarContrasena = ref(false)
 const error = ref('')
+const correoInput = ref(null)
 const errorCorreo = ref('')
 const intentos = ref(0)
 const loading = ref(false)
@@ -149,6 +178,13 @@ const requisitos = computed(() => {
   const barColor = cumplidos <= 1 ? 'bg-red-500' : cumplidos <= 2 ? 'bg-yellow-500' : cumplidos === 3 ? 'bg-blue-500' : 'bg-green-500'
   return { lista, cumplidos, barColor }
 })
+
+function reintentar(mantenerCampos) {
+  error.value = ''
+  contrasena.value = ''
+  if (!mantenerCampos) correo.value = ''
+  nextTick(() => correoInput.value?.focus())
+}
 
 async function handleSubmit() {
   if (intentos.value >= 3) return

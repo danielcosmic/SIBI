@@ -38,7 +38,7 @@ public class EncargadoController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "GTI,Administradora")]
+    [Authorize(Roles = "GTI,Administradora,JefaAdministrativa")]
     public async Task<IActionResult> Crear([FromBody] CrearEncargadoRequest request)
     {
         if (await _db.Encargados.AnyAsync(e => e.Nombre == request.Nombre && e.Rol == request.Rol))
@@ -98,7 +98,7 @@ public class EncargadoController : ControllerBase
             .OrderBy(a => a.Placa)
             .ToListAsync();
 
-        return Ok(activos.Select(ActivoController.MapToDto));
+        return Ok(activos.Select(a => ActivoController.MapToDto(a)));
     }
 
     [HttpPost("{id:guid}/reasignar")]

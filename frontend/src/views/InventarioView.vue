@@ -31,7 +31,7 @@
           </button>
         </template>
         <!-- Importar / Nuevo Activo -->
-        <template v-if="auth.esGTI">
+        <template v-if="auth.esGTI || auth.esAdministradora || auth.esJefaAdministrativa">
           <button
             @click="importarOpen = true"
             class="border border-[#003d7a] text-[#003d7a] px-4 py-2.5 rounded-lg hover:bg-blue-50 transition flex items-center gap-2 font-medium text-sm"

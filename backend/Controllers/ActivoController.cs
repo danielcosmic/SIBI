@@ -59,7 +59,14 @@ public class ActivoController : ControllerBase
             .Take(tamano)
             .ToListAsync();
 
-        return Ok(new { total, pagina, tamano, items = items.Select(MapToDto) });
+        var placasPage = items.Select(a => a.Placa).ToList();
+        var fechasCreacion = await _db.Historial
+            .Where(h => placasPage.Contains(h.ActivoPlaca) && h.TipoAccion == "Creacion")
+            .GroupBy(h => h.ActivoPlaca)
+            .Select(g => new { Placa = g.Key, Fecha = g.Min(h => h.FechaHora) })
+            .ToDictionaryAsync(x => x.Placa, x => (DateTime?)x.Fecha);
+
+        return Ok(new { total, pagina, tamano, items = items.Select(a => MapToDto(a, fechasCreacion.GetValueOrDefault(a.Placa))) });
     }
 
     [HttpGet("stats")]
@@ -97,11 +104,15 @@ public class ActivoController : ControllerBase
             .FirstOrDefaultAsync(a => a.Placa == placa);
 
         if (activo is null) return NotFound();
-        return Ok(MapToDto(activo));
+        var fechaCreacion = await _db.Historial
+            .Where(h => h.ActivoPlaca == placa && h.TipoAccion == "Creacion")
+            .Select(h => (DateTime?)h.FechaHora)
+            .FirstOrDefaultAsync();
+        return Ok(MapToDto(activo, fechaCreacion));
     }
 
     [HttpPost]
-    [Authorize(Roles = "GTI,Administradora")]
+    [Authorize(Roles = "GTI,Administradora,JefaAdministrativa")]
     public async Task<IActionResult> Crear([FromBody] CrearActivoRequest request)
     {
         if (await _db.Activos.AnyAsync(a => a.Placa == request.Placa))
@@ -157,7 +168,7 @@ public class ActivoController : ControllerBase
     }
 
     [HttpPost("importar")]
-    [Authorize(Roles = "GTI,Administradora")]
+    [Authorize(Roles = "GTI,Administradora,JefaAdministrativa")]
     public async Task<IActionResult> Importar([FromBody] List<ImportarActivoFilaRequest> filas)
     {
         var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -466,6 +477,36 @@ public class ActivoController : ControllerBase
         }
     }
 
+    [HttpDelete("{placa}/reciente")]
+    [Authorize(Roles = "GTI,Administradora,JefaAdministrativa")]
+    public async Task<IActionResult> EliminarReciente(string placa)
+    {
+        var activo = await _db.Activos.FindAsync(placa);
+        if (activo is null) return NotFound();
+
+        var fechaCreacion = await _db.Historial
+            .Where(h => h.ActivoPlaca == placa && h.TipoAccion == "Creacion")
+            .Select(h => (DateTime?)h.FechaHora)
+            .FirstOrDefaultAsync();
+
+        if (fechaCreacion is null || (DateTime.Now - fechaCreacion.Value).TotalMinutes > 10)
+            return BadRequest(new { mensaje = "Han pasado más de 10 minutos desde la creación. El activo ya no puede eliminarse por esta vía." });
+
+        var historialEntries = await _db.Historial.Where(h => h.ActivoPlaca == placa).ToListAsync();
+        var solicitudes = await _db.SolicitudesCambio.Where(s => s.ActivoPlaca == placa).ToListAsync();
+        var placaEntity = await _db.Placas.FindAsync(placa);
+        var ubicacion   = await _db.Ubicaciones.FindAsync(activo.UbicacionId);
+
+        _db.Historial.RemoveRange(historialEntries);
+        _db.SolicitudesCambio.RemoveRange(solicitudes);
+        _db.Activos.Remove(activo);
+        if (placaEntity is not null) _db.Placas.Remove(placaEntity);
+        if (ubicacion   is not null) _db.Ubicaciones.Remove(ubicacion);
+
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpDelete("{placa}")]
     [Authorize(Roles = "Administradora")]
     public async Task<IActionResult> Eliminar(string placa)
@@ -523,13 +564,13 @@ public class ActivoController : ControllerBase
 
         var ordenados = placasRecientes
             .Select(p => activos.First(a => a.Placa == p))
-            .Select(MapToDto)
+            .Select(a => MapToDto(a))
             .ToList();
 
         return Ok(ordenados);
     }
 
-    internal static ActivoDto MapToDto(Activo a) => new(
+    internal static ActivoDto MapToDto(Activo a, DateTime? fechaCreacion = null) => new(
         a.Placa,
         a.PlacaNavigation.Tipo,
         a.Marca,
@@ -545,6 +586,7 @@ public class ActivoController : ControllerBase
         a.UbicacionNavigation.EncargadoActual.Nombre,
         a.UbicacionNavigation.EncargadoAnterior.Nombre,
         a.Estado,
-        a.FechaDesecho
+        a.FechaDesecho,
+        fechaCreacion
     );
 }

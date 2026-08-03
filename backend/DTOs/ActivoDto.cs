@@ -16,5 +16,6 @@ public record ActivoDto(
     string EncargadoActual,
     string EncargadoAnterior,
     string Estado,
-    DateOnly? FechaDesecho
+    DateOnly? FechaDesecho,
+    DateTime? FechaCreacion
 );

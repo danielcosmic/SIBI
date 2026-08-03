@@ -43,6 +43,16 @@
         </div>
         <div class="flex gap-2 flex-wrap">
           <button
+            v-if="puedeEliminarReciente && (auth.esGTI || auth.esAdministradora || auth.esJefaAdministrativa)"
+            @click="eliminarReciente"
+            :disabled="eliminandoReciente"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm flex items-center gap-2 disabled:bg-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {{ eliminandoReciente ? 'Eliminando...' : `Eliminar (${tiempoRestanteElim})` }}
+          </button>
+          <button
             v-if="auth.esJefaAdministrativa && activo.estado !== 'Desecho' && !solicitudPendiente"
             @click="abrirModal('solicitud')"
             class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium text-sm flex items-center gap-2">
@@ -61,7 +71,7 @@
             Desecho
           </button>
           <button
-            v-if="auth.esGTI"
+            v-if="auth.esGTI && activo.estado !== 'Desecho'"
             @click="abrirModal('edit')"
             class="px-4 py-2 bg-[#003d7a] text-white rounded-lg hover:bg-[#002d5a] transition font-medium text-sm flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -270,7 +280,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDialog } from '@/composables/useDialog'
@@ -310,6 +320,7 @@ onMounted(async () => {
     categorias.value = catRes.data
     encargados.value = encRes.data
     await cargarSolicitudPendiente()
+    iniciarTick()
   } catch {
     activo.value = null
   } finally {
@@ -387,6 +398,48 @@ async function recargar() {
     activo.value = activoRes.data
     historial.value = histRes.data.items
   } catch (_) { /* activo no encontrado */ }
+}
+
+// ── Eliminación dentro de los primeros 10 minutos ──
+const now = ref(Date.now())
+let tickInterval = null
+
+function iniciarTick() {
+  clearInterval(tickInterval)
+  if (!activo.value?.fechaCreacion) return
+  tickInterval = setInterval(() => {
+    now.value = Date.now()
+    if (!puedeEliminarReciente.value) clearInterval(tickInterval)
+  }, 1000)
+}
+
+onUnmounted(() => clearInterval(tickInterval))
+
+const tiempoRestanteElim = computed(() => {
+  if (!activo.value?.fechaCreacion) return null
+  const ms = 10 * 60 * 1000 - (now.value - new Date(activo.value.fechaCreacion).getTime())
+  if (ms <= 0) return null
+  const secs = Math.ceil(ms / 1000)
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+})
+
+const puedeEliminarReciente = computed(() => tiempoRestanteElim.value !== null)
+
+const eliminandoReciente = ref(false)
+async function eliminarReciente() {
+  eliminandoReciente.value = true
+  try {
+    await activoService.eliminarReciente(placa)
+    router.push('/inventario')
+  } catch (e) {
+    await dialog.alert({
+      title: 'Error',
+      message: e.response?.data?.mensaje || 'No se pudo eliminar el activo.',
+      type: 'danger'
+    })
+  } finally {
+    eliminandoReciente.value = false
+  }
 }
 
 const historialMovimientos = computed(() =>
