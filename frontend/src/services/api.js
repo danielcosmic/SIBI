@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: process.env.VUE_APP_API_URL ? `${process.env.VUE_APP_API_URL}/api` : '/api',
   paramsSerializer: (params) => {
     const parts = []
     for (const [key, val] of Object.entries(params)) {
