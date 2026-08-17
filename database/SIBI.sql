@@ -62,8 +62,8 @@ CREATE TABLE Categoria (
 --    junto con los encargados correspondientes a cada una.
 CREATE TABLE Ubicacion (
     Id                  BIGINT           IDENTITY(1,1) NOT NULL,
-    Actual              VARCHAR(30)      NOT NULL,
-    Anterior            VARCHAR(30)      NOT NULL,
+    Actual              VARCHAR(60)      NOT NULL,
+    Anterior            VARCHAR(60)      NOT NULL,
     EncargadoActual     UNIQUEIDENTIFIER NOT NULL,
     EncargadoAnterior   UNIQUEIDENTIFIER NOT NULL,
 
