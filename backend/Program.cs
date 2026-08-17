@@ -68,9 +68,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// CONFIGURACIÓN DE CORS ACTUALIZADA
 builder.Services.AddCors(options =>
     options.AddPolicy("FrontendVue", policy =>
-        policy.WithOrigins("http://localhost:8080")
+        policy.SetIsOriginAllowed(_ => true) // Permite Vercel, localhost, IP local y cualquier origen
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()));
@@ -88,7 +89,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Se comenta la redirección a HTTPS para evitar fallos mientras usas el perfil HTTP local
+// app.UseHttpsRedirection();
+
 app.UseCors("FrontendVue");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -11,8 +11,13 @@ export const useNotificacionesStore = defineStore('notificaciones', {
       if (this.connection) return
       try {
         const { HubConnectionBuilder, LogLevel } = await import('@microsoft/signalr')
+
+        // 1. Obtiene la IP/URL del backend configurada en Vercel
+        const baseUrl = process.env.VUE_APP_API_URL || ''
+
         const conn = new HubConnectionBuilder()
-          .withUrl('/hubs/notificaciones', { accessTokenFactory: () => token })
+          // 2. Antepone la URL base a la ruta del hub
+          .withUrl(`${baseUrl}/hubs/notificaciones`, { accessTokenFactory: () => token })
           .withAutomaticReconnect()
           .configureLogging(LogLevel.Warning)
           .build()
