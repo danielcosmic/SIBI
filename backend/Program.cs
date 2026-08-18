@@ -3,6 +3,7 @@ using backend.Data;
 using backend.Hubs;
 using backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -36,7 +37,9 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<SibiDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SIBI")));
 
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+    throw new InvalidOperationException("Jwt:Key no está configurado. Establezca la variable de entorno Jwt__Key antes de iniciar la aplicación.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -68,13 +71,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// CONFIGURACIÓN DE CORS ACTUALIZADA
 builder.Services.AddCors(options =>
     options.AddPolicy("FrontendVue", policy =>
-        policy.SetIsOriginAllowed(_ => true) // Permite Vercel, localhost, IP local y cualquier origen
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials()));
+    {
+        if (builder.Environment.IsDevelopment())
+            policy.SetIsOriginAllowed(_ => true);
+        else
+            policy.WithOrigins("http://eic.sibi.ucr.ac.cr");
+
+        policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+    }));
 
 builder.Services.AddSignalR();
 builder.Services.AddScoped<AuthService>();
@@ -89,8 +95,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Se comenta la redirección a HTTPS para evitar fallos mientras usas el perfil HTTP local
-// app.UseHttpsRedirection();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseCors("FrontendVue");
 app.UseAuthentication();

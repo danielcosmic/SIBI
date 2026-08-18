@@ -1,0 +1,56 @@
+services:
+
+  db:
+    build:
+      context: ./database
+    container_name: sibi-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_PID: Express
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - sibi-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: sibi-backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__SIBI: "Server=db;Database=SIBI;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;"
+      Jwt__Key: ${JWT_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sibi-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: sibi-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+    networks:
+      - sibi-net
+    restart: unless-stopped
+
+volumes:
+  mssql-data:
+
+networks:
+  sibi-net:
+    driver: bridge
