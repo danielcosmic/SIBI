@@ -1,0 +1,8 @@
+# Overrides para prueba local. Este archivo NO va al servidor de producción.
+# Docker Compose lo fusiona automáticamente con docker-compose.yml en desarrollo.
+# En el servidor de producción: copiar solo docker-compose.yml (sin este archivo).
+
+services:
+  backend:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development

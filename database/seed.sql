@@ -9,7 +9,7 @@ BEGIN
     VALUES (
         'Administradora EIC',
         'soporte.eic@ucr.ac.cr',
-        'REEMPLAZAR_CON_EL_HASH',
+        '$2a$11$reBvEcYouLwal5af73u7C.ZihYmd7i0UwgN1CuzzzrSH6vOob3t2a',
         'Administradora',
         1,
         0,
