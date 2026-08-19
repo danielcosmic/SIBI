@@ -9,7 +9,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
-          <h2 class="text-xl font-bold">Importar Activos desde Excel</h2>
+          <h2 class="text-xl font-bold">Importar Activos desde Excel o CSV</h2>
         </div>
         <button @click="$emit('close')" class="p-1 hover:bg-white/10 rounded">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,7 +75,7 @@
 
           <!-- Upload zone -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Seleccionar archivo Excel</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Seleccionar archivo</label>
             <div
               class="border-2 border-dashed rounded-xl p-8 text-center transition-all"
               :class="archivoError ? 'border-red-300 bg-red-50' : archivoNombre ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-[#003d7a] hover:bg-blue-50/30'"
@@ -95,9 +95,9 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <p class="text-sm text-gray-600 mb-1">Arrastra tu archivo aquí o haz clic para seleccionar</p>
-                <p class="text-xs text-gray-400 mb-3">.xlsx o .xls</p>
+                <p class="text-xs text-gray-400 mb-3">.xlsx, .xls o .csv</p>
               </template>
-              <input ref="fileInput" type="file" accept=".xlsx,.xls" class="hidden" @change="onFileChange" />
+              <input ref="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="onFileChange" />
               <button type="button" @click="fileInput.click()"
                 class="px-4 py-1.5 text-sm rounded-lg transition"
                 :class="archivoNombre ? 'border border-green-500 text-green-700 hover:bg-green-100' : 'bg-[#003d7a] text-white hover:bg-[#002d5a]'">
@@ -723,8 +723,8 @@ function onFileChange(e) {
 
 function procesarArchivo(file) {
   archivoError.value = ''
-  if (!file.name.match(/\.(xlsx|xls)$/i)) {
-    archivoError.value = 'El archivo debe ser .xlsx o .xls'
+  if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+    archivoError.value = 'El archivo debe ser .xlsx, .xls o .csv'
     return
   }
   archivoNombre.value = file.name
@@ -737,8 +737,14 @@ async function parsearArchivo() {
   if (!file) { archivoError.value = 'Selecciona un archivo primero.'; return }
 
   const XLSX = await import('xlsx')
-  const buffer = await file.arrayBuffer()
-  const wb = XLSX.read(buffer, { type: 'array' })
+  let wb
+  if (file.name.match(/\.csv$/i)) {
+    const text = await file.text()
+    wb = XLSX.read(text, { type: 'string' })
+  } else {
+    const buffer = await file.arrayBuffer()
+    wb = XLSX.read(buffer, { type: 'array' })
+  }
   const ws = wb.Sheets[wb.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
 

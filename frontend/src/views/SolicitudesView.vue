@@ -38,11 +38,13 @@
       <div
         v-for="s in solicitudes"
         :key="s.id"
-        class="bg-white rounded-2xl shadow-md border border-blue-200 overflow-hidden"
+        class="bg-white rounded-2xl shadow-md border overflow-hidden"
+        :class="s.datosNuevos.estado === 'Desecho' ? 'border-red-300' : 'border-blue-200'"
       >
         <!-- Cabecera de la tarjeta -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-blue-50/60">
-          <div class="flex items-center gap-4">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200"
+          :class="s.datosNuevos.estado === 'Desecho' ? 'bg-red-50/70' : 'bg-blue-50/60'">
+          <div class="flex items-center gap-3">
             <div>
               <span class="font-bold text-[#003d7a] font-mono text-lg">{{ s.activoPlaca }}</span>
               <span class="mx-2 text-gray-300">·</span>
@@ -51,6 +53,13 @@
             <span :class="estadoBadge(s.estado)" class="px-3 py-0.5 rounded-full text-xs font-semibold">
               {{ s.estado }}
             </span>
+            <span v-if="s.datosNuevos.estado === 'Desecho'"
+              class="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Desecho
+            </span>
           </div>
           <div class="text-right text-sm text-gray-500">
             <p>Solicitado por <span class="font-medium text-gray-700">{{ s.solicitanteNombre }}</span></p>
@@ -58,49 +67,72 @@
           </div>
         </div>
 
-        <!-- Comparación de cambios -->
+        <!-- Contenido -->
         <div class="p-6">
-          <div class="grid grid-cols-2 gap-6">
-            <!-- Estado actual -->
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Estado actual</p>
-              <div class="space-y-2">
-                <div v-for="f in camposActuales(s)" :key="f.label" class="flex items-baseline gap-2">
-                  <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ f.label }}</span>
-                  <span class="text-sm font-medium text-gray-700 flex-1 truncate">{{ f.valor || '—' }}</span>
+          <!-- Solicitud de desecho: vista simplificada -->
+          <template v-if="s.datosNuevos.estado === 'Desecho'">
+            <div class="flex gap-6">
+              <div class="flex-1">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Activo a desechar</p>
+                <div class="space-y-2">
+                  <div v-for="f in camposActuales(s)" :key="f.label" class="flex items-baseline gap-2">
+                    <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ f.label }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{ f.valor || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-center px-8 border-l border-red-100">
+                <div class="text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-red-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <p class="text-xs font-semibold text-red-500 uppercase tracking-wide">Envío a desecho</p>
+                  <p class="text-xs text-gray-400 mt-1">Sin cambios adicionales</p>
                 </div>
               </div>
             </div>
-            <!-- Cambios propuestos -->
-            <div>
-              <p class="text-xs text-amber-500 uppercase tracking-wide font-medium mb-3">Cambios propuestos</p>
-              <div class="space-y-2">
-                <div v-for="f in camposPropuestos(s)" :key="f.label" class="flex items-baseline gap-2">
-                  <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ f.label }}</span>
-                  <span class="text-sm font-medium flex-1 truncate"
-                    :class="f.cambia ? 'text-amber-700 bg-amber-50 px-1 rounded' : 'text-gray-700'">
-                    {{ f.valor || '—' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          </template>
 
-          <!-- Campos extra -->
-          <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-3">
-            <div class="flex items-baseline gap-2">
-              <span class="text-xs text-gray-400 w-20 flex-shrink-0">N° Serial</span>
-              <span class="text-sm text-gray-700">{{ s.datosNuevos.numSerial || '—' }}</span>
+          <!-- Solicitud de cambios: vista comparativa normal -->
+          <template v-else>
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Estado actual</p>
+                <div class="space-y-2">
+                  <div v-for="f in camposActuales(s)" :key="f.label" class="flex items-baseline gap-2">
+                    <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ f.label }}</span>
+                    <span class="text-sm font-medium text-gray-700 flex-1 truncate">{{ f.valor || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p class="text-xs text-amber-500 uppercase tracking-wide font-medium mb-3">Cambios propuestos</p>
+                <div class="space-y-2">
+                  <div v-for="f in camposPropuestos(s)" :key="f.label" class="flex items-baseline gap-2">
+                    <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ f.label }}</span>
+                    <span class="text-sm font-medium flex-1 truncate"
+                      :class="f.cambia ? 'text-amber-700 bg-amber-50 px-1 rounded' : 'text-gray-700'">
+                      {{ f.valor || '—' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-xs text-gray-400 w-20 flex-shrink-0">Categoría</span>
-              <span class="text-sm text-gray-700">{{ s.datosNuevos.categoriaNombre || '—' }}</span>
+            <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-3">
+              <div class="flex items-baseline gap-2">
+                <span class="text-xs text-gray-400 w-20 flex-shrink-0">N° Serial</span>
+                <span class="text-sm text-gray-700">{{ s.datosNuevos.numSerial || '—' }}</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-xs text-gray-400 w-20 flex-shrink-0">Categoría</span>
+                <span class="text-sm text-gray-700">{{ s.datosNuevos.categoriaNombre || '—' }}</span>
+              </div>
+              <div v-if="s.datosNuevos.observaciones" class="flex items-baseline gap-2">
+                <span class="text-xs text-gray-400 w-24 flex-shrink-0">Observaciones</span>
+                <span class="text-sm text-gray-700 italic">{{ s.datosNuevos.observaciones }}</span>
+              </div>
             </div>
-            <div v-if="s.datosNuevos.observaciones" class="flex items-baseline gap-2">
-              <span class="text-xs text-gray-400 w-24 flex-shrink-0">Observaciones</span>
-              <span class="text-sm text-gray-700 italic">{{ s.datosNuevos.observaciones }}</span>
-            </div>
-          </div>
+          </template>
 
           <!-- Resolución (aprobada/rechazada) -->
           <div v-if="s.estado !== 'Pendiente'" class="mt-4 pt-4 border-t border-gray-100 flex items-start gap-3">

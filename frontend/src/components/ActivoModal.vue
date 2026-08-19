@@ -22,16 +22,56 @@
       <template v-if="mode === 'view' && !mostrandoConfirmacion">
         <div class="overflow-y-auto flex-1 p-4 space-y-3">
 
-          <!-- Banner de solicitud pendiente (solo JefaAdministrativa) -->
-          <div v-if="solicitudPendiente" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
+          <!-- Banner de desecho: quién lo envió o solicitó -->
+          <div v-if="props.activo?.estado === 'Desecho' && desechoInfo" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
             <div class="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <div class="flex-1 min-w-0">
+                <template v-if="desechoInfo.tipo === 'solicitud'">
+                  <p class="text-sm text-red-800">
+                    Solicitado por <span class="font-semibold">{{ desechoInfo.solicitante }}</span>
+                    <template v-if="desechoInfo.aprobadoPor">, aprobado por <span class="font-semibold">{{ desechoInfo.aprobadoPor }}</span></template>
+                  </p>
+                </template>
+                <template v-else>
+                  <p class="text-sm text-red-800">
+                    Enviado a desecho por <span class="font-semibold">{{ desechoInfo.realizadoPor }}</span>
+                  </p>
+                </template>
+                <p class="text-xs text-red-400 mt-0.5">{{ formatFechaSolicitud(desechoInfo.fecha) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Banner de solicitud pendiente (solo JefaAdministrativa) -->
+          <div v-if="solicitudPendiente"
+            :class="solicitudPendiente.datosNuevos.estado === 'Desecho'
+              ? 'border-red-200 bg-red-50'
+              : 'border-amber-200 bg-amber-50'"
+            class="rounded-xl border px-4 py-3 space-y-2"
+          >
+            <div class="flex items-center gap-2">
+              <!-- Ícono según tipo -->
+              <svg v-if="solicitudPendiente.datosNuevos.estado === 'Desecho'"
+                xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <svg v-else
+                xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p class="text-sm font-semibold text-amber-800">Cambio en espera de aprobación</p>
-              <span class="ml-auto text-xs text-amber-500">{{ formatFechaSolicitud(solicitudPendiente.fechaSolicitud) }}</span>
+              <p class="text-sm font-semibold"
+                :class="solicitudPendiente.datosNuevos.estado === 'Desecho' ? 'text-red-800' : 'text-amber-800'">
+                {{ solicitudPendiente.datosNuevos.estado === 'Desecho' ? 'Solicitud de desecho en espera de aprobación' : 'Cambio en espera de aprobación' }}
+              </p>
+              <span class="ml-auto text-xs"
+                :class="solicitudPendiente.datosNuevos.estado === 'Desecho' ? 'text-red-400' : 'text-amber-500'">
+                {{ formatFechaSolicitud(solicitudPendiente.fechaSolicitud) }}
+              </span>
             </div>
-            <ul class="space-y-1 pl-6">
+            <ul v-if="solicitudPendiente.datosNuevos.estado !== 'Desecho'" class="space-y-1 pl-6">
               <template v-for="campo in camposCambiados" :key="campo.label">
                 <li class="text-xs text-amber-700">
                   <span class="font-medium">{{ campo.label }}:</span>
@@ -613,6 +653,17 @@ async function cargarSolicitudPendiente(placa) {
 }
 
 const solicitandoDesecho = ref(false)
+const desechoInfo = ref(null)
+
+async function cargarDesechoInfo(placa) {
+  if (!placa) { desechoInfo.value = null; return }
+  try {
+    const res = await activoService.desechoInfo(placa)
+    desechoInfo.value = res.status === 204 ? null : res.data
+  } catch {
+    desechoInfo.value = null
+  }
+}
 
 async function solicitarDesecho() {
   const ok = await dialog.confirm({
@@ -804,8 +855,11 @@ watch(() => props.activo, (activo) => {
       estado: activo.estado
     }
     cargarSolicitudPendiente(activo.placa)
+    if (activo.estado === 'Desecho') cargarDesechoInfo(activo.placa)
+    else desechoInfo.value = null
   } else {
     solicitudPendiente.value = null
+    desechoInfo.value = null
   }
 }, { immediate: true })
 

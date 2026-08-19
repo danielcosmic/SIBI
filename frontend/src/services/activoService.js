@@ -29,5 +29,8 @@ export default {
     api.get('/activo/recientes', { params: { categoriaId, tamano } }),
 
   importar: (filas) =>
-    api.post('/activo/importar', filas)
+    api.post('/activo/importar', filas),
+
+  desechoInfo: (placa) =>
+    api.get(`/activo/${encodeURIComponent(placa)}/desecho-info`)
 }

@@ -160,6 +160,21 @@
                 <p class="text-xs text-red-400 mb-0.5">Fecha de Desecho</p>
                 <p class="font-medium text-red-700">{{ activo.fechaDesecho }}</p>
               </div>
+              <div v-if="desechoInfo" class="bg-red-50 rounded-lg p-3 col-span-2 border border-red-100">
+                <p class="text-xs text-red-400 mb-1">Responsable del desecho</p>
+                <template v-if="desechoInfo.tipo === 'solicitud'">
+                  <p class="text-sm text-red-800">
+                    Solicitado por <span class="font-semibold">{{ desechoInfo.solicitante }}</span>
+                    <template v-if="desechoInfo.aprobadoPor">, aprobado por <span class="font-semibold">{{ desechoInfo.aprobadoPor }}</span></template>
+                  </p>
+                </template>
+                <template v-else>
+                  <p class="text-sm text-red-800">
+                    Enviado a desecho por <span class="font-semibold">{{ desechoInfo.realizadoPor }}</span>
+                  </p>
+                </template>
+                <p v-if="desechoInfo.fecha" class="text-xs text-red-400 mt-0.5">{{ formatFecha(desechoInfo.fecha) }}</p>
+              </div>
             </div>
           </div>
 
@@ -304,6 +319,7 @@ const cargandoHistorial = ref(true)
 const categorias = ref([])
 const encargados = ref([])
 const solicitudPendiente = ref(null)
+const desechoInfo = ref(null)
 const modalAbierto = ref(false)
 const modalMode = ref('edit')
 
@@ -320,6 +336,7 @@ onMounted(async () => {
     categorias.value = catRes.data
     encargados.value = encRes.data
     await cargarSolicitudPendiente()
+    if (activoRes.data?.estado === 'Desecho') await cargarDesechoInfo()
     iniciarTick()
   } catch {
     activo.value = null
@@ -336,6 +353,15 @@ async function cargarSolicitudPendiente() {
     solicitudPendiente.value = res.status === 204 ? null : res.data
   } catch {
     solicitudPendiente.value = null
+  }
+}
+
+async function cargarDesechoInfo() {
+  try {
+    const res = await activoService.desechoInfo(placa)
+    desechoInfo.value = res.status === 204 ? null : res.data
+  } catch {
+    desechoInfo.value = null
   }
 }
 
@@ -397,6 +423,8 @@ async function recargar() {
     ])
     activo.value = activoRes.data
     historial.value = histRes.data.items
+    if (activoRes.data?.estado === 'Desecho') await cargarDesechoInfo()
+    else desechoInfo.value = null
   } catch (_) { /* activo no encontrado */ }
 }
 

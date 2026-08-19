@@ -43,7 +43,8 @@
         :class="estadoBorde(s.estado)">
 
         <!-- Cabecera -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50/60">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200"
+          :class="s.datosNuevos.estado === 'Desecho' ? 'bg-red-50/60' : 'bg-gray-50/60'">
           <div class="flex items-center gap-3">
             <div>
               <span class="font-bold text-[#003d7a] font-mono">{{ s.activoPlaca }}</span>
@@ -53,25 +54,42 @@
             <span :class="estadoBadge(s.estado)" class="px-3 py-0.5 rounded-full text-xs font-semibold">
               {{ s.estado }}
             </span>
+            <span v-if="s.datosNuevos.estado === 'Desecho'"
+              class="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Desecho
+            </span>
           </div>
           <span class="text-xs text-gray-400">{{ formatFecha(s.fechaSolicitud) }}</span>
         </div>
 
         <!-- Cambios propuestos -->
-        <div class="px-6 py-4 space-y-2">
-          <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Cambios propuestos</p>
-          <div class="grid grid-cols-2 gap-x-8 gap-y-1.5">
-            <template v-for="campo in calcularCambios(s)" :key="campo.label">
-              <div class="flex items-baseline gap-2 col-span-1">
-                <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ campo.label }}</span>
-                <span v-if="campo.cambia" class="text-sm">
-                  <span class="line-through text-gray-400">{{ campo.actual }}</span>
-                  <span class="italic font-medium text-amber-700 ml-1">→ {{ campo.propuesto }}</span>
-                </span>
-                <span v-else class="text-sm text-gray-500 italic">sin cambio</span>
-              </div>
-            </template>
-          </div>
+        <div class="px-6 py-4">
+          <template v-if="s.datosNuevos.estado === 'Desecho'">
+            <div class="flex items-center gap-3 text-sm text-red-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Solicitud de envío a desecho — no se proponen cambios adicionales al activo.
+            </div>
+          </template>
+          <template v-else>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Cambios propuestos</p>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-1.5">
+              <template v-for="campo in calcularCambios(s)" :key="campo.label">
+                <div class="flex items-baseline gap-2 col-span-1">
+                  <span class="text-xs text-gray-400 w-20 flex-shrink-0">{{ campo.label }}</span>
+                  <span v-if="campo.cambia" class="text-sm">
+                    <span class="line-through text-gray-400">{{ campo.actual }}</span>
+                    <span class="italic font-medium text-amber-700 ml-1">→ {{ campo.propuesto }}</span>
+                  </span>
+                  <span v-else class="text-sm text-gray-500 italic">sin cambio</span>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
 
         <!-- Resolución -->
@@ -92,11 +110,19 @@
         </div>
 
         <!-- Pendiente -->
-        <div v-else class="px-6 py-3 border-t border-amber-100 bg-amber-50/40 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div v-else class="px-6 py-3 border-t flex items-center gap-2"
+          :class="s.datosNuevos.estado === 'Desecho'
+            ? 'border-red-100 bg-red-50/40'
+            : 'border-amber-100 bg-amber-50/40'">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0"
+            :class="s.datosNuevos.estado === 'Desecho' ? 'text-red-400' : 'text-amber-500'"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p class="text-sm text-amber-700 italic">En espera de revisión por Administradora o GTI</p>
+          <p class="text-sm italic"
+            :class="s.datosNuevos.estado === 'Desecho' ? 'text-red-600' : 'text-amber-700'">
+            En espera de revisión por Administradora o GTI
+          </p>
         </div>
       </div>
     </div>

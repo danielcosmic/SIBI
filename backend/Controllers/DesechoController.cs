@@ -1,9 +1,11 @@
 using backend.Data;
+using backend.DTOs;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace backend.Controllers;
 
@@ -32,7 +34,35 @@ public class DesechoController : ControllerBase
             .Include(a => a.UbicacionNavigation).ThenInclude(u => u.EncargadoAnterior)
             .ToListAsync();
 
+        var placas = activos.Select(a => a.Placa).ToList();
         var hoy = DateOnly.FromDateTime(DateTime.Today);
+
+        var solicitudes = await _db.SolicitudesCambio
+            .Include(s => s.Solicitante).Include(s => s.Revisor)
+            .Where(s => placas.Contains(s.ActivoPlaca) && s.Estado == "Aprobada")
+            .OrderByDescending(s => s.FechaResolucion)
+            .ToListAsync();
+
+        var historialEntradas = await _db.Historial
+            .Include(h => h.Usuario)
+            .Where(h => placas.Contains(h.ActivoPlaca) && h.TipoAccion == "CambioEstado"
+                        && h.Descripcion != null && h.Descripcion.Contains("Desecho"))
+            .OrderByDescending(h => h.FechaHora)
+            .ToListAsync();
+
+        object? ResolverDesechoInfo(string placa)
+        {
+            foreach (var sol in solicitudes.Where(s => s.ActivoPlaca == placa))
+            {
+                var datos = JsonSerializer.Deserialize<SolicitudDatosDto>(sol.DatosNuevos);
+                if (datos?.Estado == "Desecho")
+                    return new { tipo = "solicitud", solicitante = sol.Solicitante.Nombre, aprobadoPor = sol.Revisor?.Nombre, fecha = (object?)sol.FechaResolucion };
+            }
+            var h = historialEntradas.FirstOrDefault(h => h.ActivoPlaca == placa);
+            if (h is not null)
+                return new { tipo = "directo", realizadoPor = h.Usuario?.Nombre ?? h.UsuarioCorreo, fecha = (object?)h.FechaHora };
+            return null;
+        }
 
         return Ok(activos.Select(a => new
         {
@@ -41,7 +71,8 @@ public class DesechoController : ControllerBase
                 ? hoy.DayNumber - a.FechaDesecho.Value.DayNumber
                 : 0,
             puedeEliminar = a.FechaDesecho is not null &&
-                hoy.DayNumber - a.FechaDesecho.Value.DayNumber >= 365
+                hoy.DayNumber - a.FechaDesecho.Value.DayNumber >= 365,
+            desechoInfo = ResolverDesechoInfo(a.Placa)
         }));
     }
 

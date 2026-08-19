@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace backend.Controllers;
 
@@ -109,6 +110,54 @@ public class ActivoController : ControllerBase
             .Select(h => (DateTime?)h.FechaHora)
             .FirstOrDefaultAsync();
         return Ok(MapToDto(activo, fechaCreacion));
+    }
+
+    [HttpGet("{placa}/desecho-info")]
+    public async Task<IActionResult> DesechoInfo(string placa)
+    {
+        var activo = await _db.Activos.FindAsync(placa);
+        if (activo is null) return NotFound();
+        if (activo.Estado != "Desecho") return NoContent();
+
+        // Buscar solicitud aprobada que cambió el estado a Desecho
+        var solicitudes = await _db.SolicitudesCambio
+            .Include(s => s.Solicitante)
+            .Include(s => s.Revisor)
+            .Where(s => s.ActivoPlaca == placa && s.Estado == "Aprobada")
+            .OrderByDescending(s => s.FechaResolucion)
+            .ToListAsync();
+
+        foreach (var sol in solicitudes)
+        {
+            var datos = JsonSerializer.Deserialize<SolicitudDatosDto>(sol.DatosNuevos);
+            if (datos?.Estado == "Desecho")
+                return Ok(new
+                {
+                    tipo = "solicitud",
+                    solicitante = sol.Solicitante.Nombre,
+                    aprobadoPor = sol.Revisor?.Nombre,
+                    fecha = sol.FechaResolucion
+                });
+        }
+
+        // Desecho directo: buscar en historial
+        var h = await _db.Historial
+            .Include(h => h.Usuario)
+            .Where(h => h.ActivoPlaca == placa
+                     && h.TipoAccion == "CambioEstado"
+                     && h.Descripcion != null && h.Descripcion.Contains("Desecho"))
+            .OrderByDescending(h => h.FechaHora)
+            .FirstOrDefaultAsync();
+
+        if (h is not null)
+            return Ok(new
+            {
+                tipo = "directo",
+                realizadoPor = h.Usuario?.Nombre ?? h.UsuarioCorreo,
+                fecha = h.FechaHora
+            });
+
+        return NoContent();
     }
 
     [HttpPost]
