@@ -156,7 +156,14 @@ public class SolicitudCambioController : ControllerBase
         activo.Articulo = datos.Articulo;
         activo.CategoriaId = datos.CategoriaId;
         activo.Observaciones = datos.Observaciones;
-        activo.Estado = datos.Estado;
+
+        if (activo.Estado != datos.Estado)
+        {
+            activo.FechaDesecho = datos.Estado == "Desecho"
+                ? DateOnly.FromDateTime(DateTime.Today)
+                : null;
+            activo.Estado = datos.Estado;
+        }
 
         if (activo.UbicacionNavigation.Actual != datos.UbicacionActual ||
             activo.UbicacionNavigation.EncargadoActualId != datos.EncargadoId)

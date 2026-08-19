@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999" @click.self="$emit('close')">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 
       <!-- Header -->
@@ -184,6 +184,18 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
             Solicitar Cambio
+          </button>
+          <button
+            v-if="auth.esJefaAdministrativa && props.activo?.estado !== 'Desecho' && !solicitudPendiente"
+            type="button"
+            @click="solicitarDesecho"
+            :disabled="solicitandoDesecho"
+            class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium flex items-center justify-center gap-2 disabled:bg-gray-400"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {{ solicitandoDesecho ? 'Enviando...' : 'Solicitar Desecho' }}
           </button>
           <button
             v-if="auth.esGTI && props.activo?.estado !== 'Desecho'"
@@ -583,9 +595,11 @@ import categoriaService from '@/services/categoriaService'
 import encargadoService from '@/services/encargadoService'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDialog } from '@/composables/useDialog'
 
 const router = useRouter()
 const auth = useAuthStore()
+const dialog = useDialog()
 const solicitudPendiente = ref(null)
 
 async function cargarSolicitudPendiente(placa) {
@@ -595,6 +609,42 @@ async function cargarSolicitudPendiente(placa) {
     solicitudPendiente.value = res.status === 204 ? null : res.data
   } catch {
     solicitudPendiente.value = null
+  }
+}
+
+const solicitandoDesecho = ref(false)
+
+async function solicitarDesecho() {
+  const ok = await dialog.confirm({
+    title: 'Solicitar envío a Desecho',
+    message: `¿Deseas solicitar el envío a desecho del activo <strong>${props.activo.placa}</strong>? La solicitud quedará pendiente de aprobación.`,
+    confirmText: 'Enviar Solicitud',
+    type: 'danger'
+  })
+  if (!ok) return
+  solicitandoDesecho.value = true
+  try {
+    await solicitudService.crear({
+      activoPlaca: props.activo.placa,
+      marca: props.activo.marca,
+      modelo: props.activo.modelo,
+      numSerial: props.activo.numSerial,
+      articulo: props.activo.articulo,
+      categoriaId: props.activo.categoriaId,
+      observaciones: props.activo.observaciones || null,
+      ubicacionActual: props.activo.ubicacionActual,
+      encargadoId: props.activo.encargadoActualId,
+      estado: 'Desecho'
+    })
+    emit('saved')
+  } catch (e) {
+    await dialog.alert({
+      title: 'Error',
+      message: e.response?.data?.mensaje || 'No se pudo enviar la solicitud de desecho.',
+      type: 'danger'
+    })
+  } finally {
+    solicitandoDesecho.value = false
   }
 }
 

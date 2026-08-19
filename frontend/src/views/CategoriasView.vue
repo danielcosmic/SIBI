@@ -300,7 +300,7 @@ async function seleccionarCategoria(cat) {
   panelActivos.value = []
   panelCargando.value = true
   try {
-    const { data } = await activoService.listar({ categoriaId: cat.id, tamano: 500 })
+    const { data } = await activoService.listar({ categoriaIds: [cat.id], tamano: 500 })
     panelActivos.value = data.items
   } finally {
     panelCargando.value = false

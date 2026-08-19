@@ -183,4 +183,4 @@ CREATE TABLE SolicitudCambio (
 -- Usuario administrador inicial con contraseña temporal.
 -- El hash debe reemplazarse por uno generado con BCrypt antes de primer uso.
 INSERT INTO Usuario (Nombre, Correo, Contrasena, Permisos, EsContrasenaTemporal) VALUES
-    ('Administrador SIBI', 'soporte.eic@ucr.ac.cr', 'HASH_PENDIENTE', 'Administradora', 1);
+    ('Administrador SIBI', 'soporte.eic@ucr.ac.cr', '$2a$11$reBvEcYouLwal5af73u7C.ZihYmd7i0UwgN1CuzzzrSH6vOob3t2a', 'Administradora', 1);

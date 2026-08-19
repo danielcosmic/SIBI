@@ -8,6 +8,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
       MSSQL_PID: Express
+      TZ: America/Costa_Rica
     volumes:
       - mssql-data:/var/opt/mssql
     networks:
@@ -29,6 +30,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__SIBI: "Server=db;Database=SIBI;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;"
       Jwt__Key: ${JWT_KEY}
+      TZ: America/Costa_Rica
     depends_on:
       db:
         condition: service_healthy
