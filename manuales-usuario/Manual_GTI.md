@@ -49,7 +49,7 @@ Verás tarjetas resumen: total de activos, activos en desecho, categorías y una
 
 ## 5. Inventario: tu trabajo principal
 
-- **Crear un activo**: completa placa, tipo de placa, marca, modelo, número de serie, artículo, categoría, ubicación y encargado. Si el encargado o la categoría todavía no existen, puedes crearlos sin salir del formulario.
+- **Crear un activo**: completa placa, tipo de placa, marca, modelo, número de serie, artículo, categoría, ubicación y encargado. Si el encargado todavía no existe, puedes crearlo sin salir del formulario (la categoría no: si te falta una, contacta a un administrador para que la agregue primero).
 - **Editar un activo**: puedes modificar cualquier dato, incluido el estado. Si cambias el estado a "Desecho", el sistema anota la fecha automáticamente y el activo pasará a la cola de revisión para su baja definitiva.
 - **Enviar a Desecho con un clic**: al abrir la vista rápida de un activo (que no esté ya en Desecho) verás un botón rojo "Enviar a Desecho" que aplica el cambio de inmediato tras confirmar, sin necesidad de abrir el formulario completo de edición.
 - **Cambiar de ubicación o encargado**: el sistema conserva automáticamente cuál era la ubicación/encargado anterior, así que no necesitas anotarlo en ningún otro lado — queda visible en el detalle del activo y en el historial.
@@ -60,13 +60,42 @@ Verás tarjetas resumen: total de activos, activos en desecho, categorías y una
 
 ---
 
-## 6. Desecho
+## 6. Paso a paso: cómo ingresar activos (uno por uno o en bloque)
+
+### 6.1 Ingresar un activo individual
+
+1. Ve a "Inventario" y haz clic en **"Nuevo Activo"** (arriba a la derecha).
+2. Completa el formulario, dividido en cuatro bloques:
+   - **Identificación**: Placa* (máx. 8 caracteres), Tipo de Placa* (Institucional o Interno), Artículo* (máx. 20), N° Serial* (máx. 30), Marca* (máx. 30), Modelo* (máx. 20).
+   - **Clasificación**: Categoría* — búscala en el selector. Si no existe la que necesitas, no puedes crearla desde aquí: contacta a un administrador para que la agregue primero.
+   - **Ubicación y Responsable**: Ubicación Actual* (texto libre, máx. 30) y Encargado* — búscalo en el selector, o crea uno nuevo con "Nuevo encargado" (nombre y cargo/rol) sin salir del formulario.
+   - **Observaciones** (opcional, hasta 200 caracteres).
+3. Haz clic en **"Confirmar y Crear"**: se abre una pantalla de revisión con todos los datos agrupados. Si algo está mal, usa "Editar" para volver al formulario; si todo está correcto, haz clic en **"Confirmar y Crear"** de nuevo para guardarlo definitivamente.
+4. El activo queda creado con estado "Activo" y aparece de inmediato en el inventario. Si detectas un error justo después (por ejemplo, la placa mal escrita), puedes eliminarlo con el botón "Eliminar" en su vista rápida — solo funciona **dentro de los primeros 10 minutos** desde la creación (verás la cuenta regresiva en el propio botón).
+
+### 6.2 Ingresar activos en bloque (Excel o CSV)
+
+Es un asistente de 3 o 4 pasos (el paso de "Entidades" solo aparece si hace falta resolver algo):
+
+1. En "Inventario", haz clic en **"Importar Excel"**. En el **paso 1 ("Preparar archivo")** verás la lista de categorías y encargados que ya existen en el sistema (útil para escribir los nombres exactos en tu archivo) y el botón **"Descargar plantilla (.xlsx)"**. Complétala con una fila por activo, **sin modificar los encabezados**, respetando el orden de columnas: `Placa, Tipo Placa, Artículo, Marca, Modelo, N° Serial, Categoría, Ubicación Actual, Encargado, Observaciones`. El campo Tipo Placa debe ser `Institucional` o `Interno`/`Interna`. Luego arrastra el archivo a la zona de carga o haz clic para seleccionarlo (acepta `.xlsx`, `.xls` o `.csv`).
+2. Haz clic en **"Previsualizar"** para pasar al **paso 2 ("Vista previa")**: una tabla te muestra cada fila con sus datos y, si hay un problema, el motivo en rojo. Las categorías o encargados que el sistema no reconoce se marcan con una etiqueta amarilla "Nuevo", y los nombres de encargado que coinciden con más de una persona registrada se marcan "Duplicado". Si hay errores de datos (campos vacíos, etc.), corrige el archivo original y vuelve a subirlo desde el paso 1.
+3. Si todas las filas son válidas y no hay entidades nuevas ni ambiguas, el botón dice directamente **"Importar N activos"** — haz clic y listo. Si el sistema detectó categorías/encargados nuevos o nombres duplicados, verás en cambio **"Siguiente →"**, que te lleva al **paso 3 ("Entidades")**, donde:
+   - Apruebas o descartas cada encargado nuevo (checkbox) indicando su cargo/rol — esto sí funciona para tu rol.
+   - **Cuidado con las categorías nuevas**: el asistente te deja marcar la casilla para aprobar una categoría que no existe, pero la creación de categorías está reservada a un administrador — si apruebas una categoría nueva, esa parte falla en silencio y las filas que dependen de ella terminarán con error "Categoría no encontrada" en el paso de resultados. Si tu archivo usa una categoría que no existe todavía, pide a un administrador que la cree antes de importar, en vez de aprobarla desde aquí.
+   - Para nombres parecidos a uno ya existente, eliges si es "la misma" (usar la existente) o si en realidad es una nueva.
+   - Para nombres duplicados dentro del propio archivo (la misma categoría o persona escrita de formas distintas), eliges cuál nombre usar para todas esas filas.
+   - Para encargados con nombre ambiguo en el sistema (varias personas con el mismo nombre), eliges cuál de ellas es la correcta para esas filas.
+4. Haz clic en **"Confirmar e importar"**: llegas al **paso 4 ("Resultados")**, con el conteo de activos creados, placas que ya existían (omitidas) y filas con error (con el detalle de cada una). Los activos creados ya están disponibles en el inventario al cerrar el asistente.
+
+---
+
+## 7. Desecho
 
 Puedes **ver** la lista de activos en estado Desecho, cuántos días llevan ahí (con una barra de progreso hacia los 365 días) y quién los envió o solicitó (nota "Responsable del desecho" cuando esa información está disponible). También puedes exportar la lista a PDF con el botón "Imprimir PDF". Lo que **no puedes** es aprobar ni rechazar su eliminación definitiva. Si consideras que un activo en Desecho debería restaurarse o eliminarse, contacta a un administrador del sistema.
 
 ---
 
-## 7. Solicitudes de cambio: tu rol como aprobador
+## 8. Solicitudes de cambio: tu rol como aprobador
 
 Cuando alguien sin permiso de edición directa quiere proponer un cambio sobre un activo, lo hace mediante una **solicitud de cambio**, que tú puedes resolver:
 
@@ -78,7 +107,7 @@ Recibirás una notificación en tiempo real (ícono de campana) apenas llegue un
 
 ---
 
-## 8. Encargados
+## 9. Encargados
 
 - Puedes **crear** (botón "Nuevo Encargado") y **editar** encargados (nombre y rol/cargo).
 - Puedes ver cuántos activos tiene asignados cada encargado y consultar el detalle de esos activos en un panel desplegable.
@@ -87,19 +116,19 @@ Recibirás una notificación en tiempo real (ícono de campana) apenas llegue un
 
 ---
 
-## 9. Historial / auditoría
+## 10. Historial / auditoría
 
 Puedes consultar el historial completo de movimientos del sistema, en formato de línea de tiempo. Filtros disponibles: **Tipo de Acción** (Creación, Cambio de Ubicación, Cambio de Encargado, Cambio de Estado, Cambio de Placa, Aprobación, Eliminación, Rechazo, Solicitud de Cambio, Solicitud Aprobada, Solicitud Rechazada), nombre de usuario, y rango de fechas. Al hacer clic en un registro se abre el detalle del activo relacionado. Es útil para verificar qué pasó con un activo antes de tomar una decisión sobre él.
 
 ---
 
-## 10. Categorías
+## 11. Categorías
 
 Puedes **ver** el listado de categorías y hacer clic sobre cualquiera para desplegar un panel con los activos que contiene (con su propio buscador), pero no puedes crear, editar ni eliminar ninguna. Si necesitas una categoría nueva o notas un error en una existente, contacta a un administrador para que la ajuste.
 
 ---
 
-## 11. Limitaciones a tener en cuenta
+## 12. Limitaciones a tener en cuenta
 
 - No tienes acceso a la sección de Usuarios del sistema.
 - No puedes tomar la decisión final sobre categorías ni sobre eliminación de encargados o de activos en Desecho.
@@ -108,7 +137,7 @@ Puedes **ver** el listado de categorías y hacer clic sobre cualquiera para desp
 
 ---
 
-## 12. Preguntas frecuentes y errores comunes
+## 13. Preguntas frecuentes y errores comunes
 
 **"No veo el botón para aprobar la eliminación definitiva de un activo en Desecho."**
 Es correcto: solo un administrador tiene esa opción. Tú puedes ver la lista de Desecho y exportarla, pero la aprobación/rechazo final no está en tu rol.
@@ -136,7 +165,7 @@ Ninguna de las dos acciones está disponible para tu rol — contacta a un admin
 
 ---
 
-## 13. ¿A quién acudir?
+## 14. ¿A quién acudir?
 
 - Para dudas sobre tu cuenta (contraseña bloqueada, cambio de rol, acceso), contacta a un administrador del sistema dentro de tu equipo.
 - Para dudas sobre el uso del sistema, decisiones que no puedes tomar (categorías, bajas definitivas, eliminación de encargados) o cualquier problema técnico que encuentres, puedes escribir a **soporte.eic@ucr.ac.cr**.

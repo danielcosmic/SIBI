@@ -594,12 +594,17 @@ Una `JefaAdministrativa` solo puede tener el efecto de sus cambios reflejado si 
    - **Recuperar** (botón "Recuperar" en la UI → `POST /api/desecho/{placa}/rechazar`): vuelve el activo a `Estado = Activo`, limpia `FechaDesecho`.
    - **Aprobar Eliminación** (`POST /api/desecho/{placa}/aprobar`, solo si ≥365 días, con doble confirmación en la UI): registra `Historial: Aprobacion` y **borra el activo y todas sus dependencias** de forma permanente.
 
-### 13.5 Recuperación e importación masiva desde Excel
+### 13.5 Importación masiva desde Excel/CSV
 
-1. El usuario descarga la plantilla `.xlsx` (generada en el navegador con SheetJS, columnas fijas: Placa, TipoPlaca, Articulo, Marca, Modelo, NumSerial, CategoriaNombre, UbicacionActual, EncargadoNombre, Observaciones).
-2. Sube el archivo lleno; `ImportarActivosModal.vue` lo parsea **en el cliente** con SheetJS y hace una validación local básica (columnas presentes, filas no vacías).
-3. Envía el array de filas parseadas a `POST /api/activo/importar`.
-4. El backend procesa **fila por fila, cada una en su propia transacción**: resuelve `CategoriaNombre` → `CategoriaId` y `EncargadoNombre` → `EncargadoId` (fallando si el nombre no existe o es ambiguo entre varios encargados), y reporta éxito/error por fila con mensajes en español traducidos desde los errores crudos de SQL Server.
+`ImportarActivosModal.vue` es un asistente de hasta 4 pasos, con toda la resolución de nombres hecha **en el cliente** antes de tocar el backend:
+
+1. **Preparar archivo**: descarga de plantilla `.xlsx` (columnas fijas, en este orden: `Placa, Tipo Placa, Artículo, Marca, Modelo, N° Serial, Categoría, Ubicación Actual, Encargado, Observaciones`) y carga de un archivo `.xlsx`/`.xls`/`.csv`, parseado con SheetJS (como texto para CSV, como buffer para Excel).
+2. **Vista previa**: valida cada fila localmente (campos requeridos) y, comparando contra las categorías/encargados ya cargados en memoria, marca cada nombre como reconocido, `"Nuevo"` (no existe) o `"Duplicado"` (un encargado con ese nombre coincide con más de un registro). Si no hay nombres nuevos ni ambiguos, el flujo salta directo a la importación; si los hay, pasa al paso 3.
+3. **Entidades** (condicional): para cada categoría/encargado nuevo, el usuario decide si aprobarlo (con ícono/rol) o descartarlo; para nombres "similares" a uno existente, si es el mismo o uno nuevo; para nombres repetidos dentro del propio archivo, cuál usar como canónico; para encargados ambiguos, cuál de los registros existentes es el correcto.
+4. **`confirmarImportacion()`** ejecuta, en este orden: (a) crea client-side, vía `categoriaService.crear`/`encargadoService.crear`, cada categoría/encargado nuevo aprobado — **con `.catch(() => {})`, silenciando cualquier error** —, y (b) arma el payload final (con `CategoriaNombre` canónico y, cuando ya se resolvió una ambigüedad, un `EncargadoId` explícito) y lo envía a `POST /api/activo/importar`.
+5. El backend (`ActivoController.Importar`) procesa **fila por fila, cada una en su propia transacción**: resuelve `CategoriaNombre` → `CategoriaId` y `EncargadoNombre` → `EncargadoId` (o usa el `EncargadoId` ya resuelto por el paso 3), fallando por fila si el nombre no existe o sigue siendo ambiguo, y reporta éxito/error por fila con mensajes en español traducidos desde los errores crudos de SQL Server.
+
+**Bug conocido**: el paso 4(a) llama a `POST /api/categoria` (creación de categoría) sin importar el rol de quien esté importando, pero ese endpoint es `[Authorize(Roles = "Administradora")]`. Si un usuario **GTI** o **JefaAdministrativa** aprueba una categoría nueva durante la importación, la llamada recibe `403 Forbidden` y el `.catch(() => {})` lo traga en silencio — la categoría nunca se crea, y todas las filas que dependían de ella terminan fallando en el paso 5 con `"Categoría 'X' no encontrada."`, sin que quede claro para el usuario por qué. La creación de encargados nuevos durante la importación sí funciona para los tres roles (`EncargadoController.Crear` permite `GTI,Administradora,JefaAdministrativa`). Si se corrige, lo más simple es que el paso 3 oculte o deshabilite la opción de aprobar categorías nuevas para roles que no sean `Administradora`, en vez de dejar que fallen silenciosamente.
 
 ---
 
@@ -653,6 +658,7 @@ Documentado explícitamente para que quien retome el proyecto no las redescubra 
 7. **Sin CI configurado** (no hay workflows en `.github/workflows`, la carpeta existe pero está vacía). Los checks de build/lint son responsabilidad manual del desarrollador antes de hacer push.
 8. **`backend/backend/` es un directorio anidado accidental** (contiene `Controllers/`, `Properties/`, `bin/`, `obj/` duplicados) visible en el listado del repo — probablemente resultado de un `dotnet new`/copy mal ejecutado en algún momento. No forma parte del proyecto real (el `.csproj` activo es `backend/backend.csproj`); vale la pena confirmarlo y limpiarlo si efectivamente es basura, revisando antes que no esté referenciado por la solución (`backend.sln`).
 9. **Notificaciones no persistentes**: solo llegan mientras la pestaña del navegador tiene la conexión SignalR activa; no hay tabla de notificaciones en base de datos ni "marcar como leída" persistente entre sesiones.
+10. **Creación silenciosamente fallida de categorías nuevas al importar, para roles GTI/JefaAdministrativa**: ver el detalle completo en [13.5](#135-importación-masiva-desde-excelcsv). El asistente de importación (`ImportarActivosModal.vue`) permite a cualquier rol aprobar una categoría nueva detectada en el archivo, pero solo `Administradora` tiene permiso para crearla en el backend (`CategoriaController.Crear`); el error 403 resultante se descarta con un `.catch(() => {})` vacío, así que el usuario no ve ningún aviso — solo descubre el problema al ver "Categoría no encontrada" en los resultados finales.
 
 ---
 

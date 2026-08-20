@@ -29,7 +29,7 @@ En resumen: eres el rol que **no depende de nadie más** para tomar decisiones d
 2. Si tu cuenta es nueva o alguien te restableció la contraseña, el sistema te dará una **contraseña temporal**. Al iniciar sesión con ella, el sistema te obligará automáticamente a cambiarla (pantalla "Cambiar Contraseña") antes de dejarte usar cualquier otra pantalla — ahí solo debes escribir y confirmar la nueva contraseña, no te pide la temporal de nuevo.
 3. La nueva contraseña debe cumplir 4 requisitos, que la pantalla te va marcando en verde a medida que los cumples: **mínimo 6 caracteres, una mayúscula, una minúscula y un número**.
 4. Si escribes tu contraseña incorrectamente, la pantalla de login te muestra "Credenciales incorrectas" con un contador ("Intento X de 3") y dos botones: **Cambiar cuenta** (borra también el correo) o **Volver a intentar** (mantiene el correo, solo borra la contraseña). Al tercer intento fallido tu cuenta queda bloqueada y el botón para reintentar se deshabilita.
-5. Si esto te pasa a ti (tu propia cuenta queda bloqueada), necesitas que **otra cuenta con este mismo nivel de acceso** te desbloquee desde la sección de Usuarios (ver punto 5). Por eso es buena práctica que exista más de una cuenta con acceso total activa al mismo tiempo.
+5. Si esto te pasa a ti (tu propia cuenta queda bloqueada), necesitas que **otra cuenta con este mismo nivel de acceso** te desbloquee desde la sección de Usuarios (ver punto 4). Por eso es buena práctica que exista más de una cuenta con acceso total activa al mismo tiempo.
 6. Si olvidaste tu contraseña, el enlace "¿Olvidaste tu contraseña?" en el login **no es un formulario de recuperación automática**: te lleva a una pantalla informativa que solo indica escribir a **soporte.eic@ucr.ac.cr** o contactar a un administrador. No hay envío automático de correo con clave nueva — la recuperación es siempre manual, por lo que si eres la única Administradora activa y pierdes el acceso, necesitas intervención directa del equipo técnico sobre la base de datos.
 7. **Cambio de contraseña voluntario**: en cualquier momento, sin estar bloqueada ni con contraseña temporal, puedes abrir el menú de tu perfil (esquina superior derecha) y elegir "Cambiar contraseña". A diferencia del cambio forzado del primer ingreso, aquí el sistema **sí te pide la contraseña actual**, además de la nueva y su confirmación.
 
@@ -80,7 +80,35 @@ Tienes acceso completo a la pantalla de Inventario, incluyendo los botones "Exce
 
 ---
 
-## 7. Desecho: aprobar o rechazar bajas definitivas
+## 7. Paso a paso: cómo ingresar activos (uno por uno o en bloque)
+
+### 7.1 Ingresar un activo individual
+
+1. Ve a "Inventario" y haz clic en **"Nuevo Activo"** (arriba a la derecha).
+2. Completa el formulario, dividido en cuatro bloques:
+   - **Identificación**: Placa* (máx. 8 caracteres), Tipo de Placa* (Institucional o Interno), Artículo* (máx. 20), N° Serial* (máx. 30), Marca* (máx. 30), Modelo* (máx. 20).
+   - **Clasificación**: Categoría* — búscala en el selector; si no existe, haz clic en "Nueva categoría" (justo debajo del selector) para crearla sin salir del formulario, indicando nombre e ícono.
+   - **Ubicación y Responsable**: Ubicación Actual* (texto libre, máx. 30) y Encargado* — búscalo en el selector, o crea uno nuevo con "Nuevo encargado" (nombre y cargo/rol) sin salir del formulario.
+   - **Observaciones** (opcional, hasta 200 caracteres).
+3. Haz clic en **"Confirmar y Crear"**: se abre una pantalla de revisión con todos los datos agrupados. Si algo está mal, usa el botón "Editar" para volver al formulario; si todo está correcto, haz clic en **"Confirmar y Crear"** de nuevo para guardarlo definitivamente.
+4. El activo queda creado con estado "Activo" y aparece de inmediato en el inventario. Si detectas un error justo después (por ejemplo, la placa mal escrita), puedes eliminarlo con el botón "Eliminar" en su vista rápida — solo funciona **dentro de los primeros 10 minutos** desde la creación (verás la cuenta regresiva en el propio botón).
+
+### 7.2 Ingresar activos en bloque (Excel o CSV)
+
+Este es un asistente de 3 o 4 pasos (el paso de "Entidades" solo aparece si hace falta resolver algo):
+
+1. En "Inventario", haz clic en **"Importar Excel"**. En el **paso 1 ("Preparar archivo")** verás la lista de categorías y encargados que ya existen en el sistema (útil para escribir los nombres exactos en tu archivo) y el botón **"Descargar plantilla (.xlsx)"**. Complétala con una fila por activo, **sin modificar los encabezados**, respetando el orden de columnas: `Placa, Tipo Placa, Artículo, Marca, Modelo, N° Serial, Categoría, Ubicación Actual, Encargado, Observaciones`. El campo Tipo Placa debe ser `Institucional` o `Interno`/`Interna`. Luego arrastra el archivo a la zona de carga o haz clic para seleccionarlo (acepta `.xlsx`, `.xls` o `.csv`).
+2. Haz clic en **"Previsualizar"** para pasar al **paso 2 ("Vista previa")**: una tabla te muestra cada fila con sus datos y, si hay un problema, el motivo en rojo. Las categorías o encargados que el sistema no reconoce se marcan con una etiqueta amarilla "Nuevo", y los nombres de encargado que coinciden con más de una persona registrada se marcan "Duplicado". Si hay errores de datos (campos vacíos, etc.), corrige el archivo original y vuelve a subirlo desde el paso 1.
+3. Si todas las filas son válidas y no hay entidades nuevas ni ambiguas, el botón dice directamente **"Importar N activos"** — haz clic y listo. Si el sistema detectó categorías/encargados nuevos o nombres duplicados, en cambio verás **"Siguiente →"**, que te lleva al **paso 3 ("Entidades")**, donde:
+   - Apruebas o descartas cada categoría/encargado nuevo (checkbox), indicando ícono para categorías y cargo/rol para encargados.
+   - Para nombres parecidos a uno ya existente, eliges si es "la misma" (usar la existente) o si en realidad es una nueva.
+   - Para nombres duplicados dentro del propio archivo (la misma categoría o persona escrita de formas distintas), eliges cuál nombre usar para todas esas filas.
+   - Para encargados con nombre ambiguo en el sistema (varias personas con el mismo nombre), eliges cuál de ellas es la correcta para esas filas.
+4. Haz clic en **"Confirmar e importar"**: llegas al **paso 4 ("Resultados")**, con el conteo de activos creados, placas que ya existían (omitidas) y filas con error (con el detalle de cada una). Los activos creados ya están disponibles en el inventario al cerrar el asistente.
+
+---
+
+## 8. Desecho: aprobar o rechazar bajas definitivas
 
 Esta pantalla es visible para cualquier rol (incluye un botón "Imprimir PDF" para exportar el reporte), pero **las acciones son exclusivas de tu rol**. Un activo llega a Desecho de dos formas: directamente (alguien con permiso de edición lo marca así) o por una solicitud de desecho aprobada. En ambos casos, si hay información disponible, verás quién lo envió o solicitó y quién lo aprobó, en una nota "Responsable del desecho" sobre cada tarjeta. Cada tarjeta muestra una barra de progreso de días transcurridos sobre 365. Tú decides:
 
@@ -91,7 +119,7 @@ Este período de espera de un año es una salvaguarda intencional del sistema pa
 
 ---
 
-## 8. Solicitudes de cambio: aprobar o rechazar
+## 9. Solicitudes de cambio: aprobar o rechazar
 
 Cuando alguien sin permiso de edición directa sobre un activo quiere corregir o actualizar sus datos, lo hace mediante una **solicitud de cambio**, que queda pendiente hasta que se resuelve. Tú eres quien las resuelve:
 
@@ -103,7 +131,7 @@ Recibirás una notificación en tiempo real (ícono de campana en la barra super
 
 ---
 
-## 9. Encargados
+## 10. Encargados
 
 Los encargados son las personas responsables de cada bien (no necesariamente tienen cuenta en el sistema). En la pantalla "Encargados" ves tarjetas con sus iniciales, rol y cantidad de activos asignados; al hacer clic despliegas un panel con el detalle de esos activos. Puedes:
 
@@ -114,13 +142,13 @@ Los encargados son las personas responsables de cada bien (no necesariamente tie
 
 ---
 
-## 10. Historial / auditoría
+## 11. Historial / auditoría
 
 En "Historial" puedes consultar **todos** los movimientos registrados en el sistema, presentados como línea de tiempo. Filtros disponibles: **Tipo de Acción** (Creación, Cambio de Ubicación, Cambio de Encargado, Cambio de Estado, Cambio de Placa, Aprobación, Eliminación, Rechazo, Solicitud de Cambio, Solicitud Aprobada, Solicitud Rechazada), **nombre de usuario**, y rango de fechas (**Desde/Hasta**). Al hacer clic en cualquier registro se abre un modal con el detalle del activo relacionado y un enlace para ir a su ficha completa. Es tu herramienta principal para auditar qué pasó con un bien y quién hizo cada cambio.
 
 ---
 
-## 11. Limitaciones a tener en cuenta
+## 12. Limitaciones a tener en cuenta
 
 - No puedes eliminar tu propia cuenta de usuario, ni restablecer tu propia contraseña desde la sección de Usuarios (por seguridad).
 - No puedes modificar el rol de la cuenta institucional `soporte.eic@ucr.ac.cr`, ni eliminarla, ni desactivarla — está protegida para que el sistema nunca se quede sin una cuenta administradora funcional.
@@ -130,7 +158,7 @@ En "Historial" puedes consultar **todos** los movimientos registrados en el sist
 
 ---
 
-## 12. Preguntas frecuentes y errores comunes
+## 13. Preguntas frecuentes y errores comunes
 
 **"No puedo eliminar un activo aunque lleva meses en Desecho."**
 El sistema exige **365 días exactos** desde la `Fecha de Desecho`, no "meses" aproximados. El botón "Aprobar Eliminación" permanece deshabilitado ("No Disponible") hasta que se cumpla el plazo completo; la tarjeta del activo te muestra cuántos días le faltan.
@@ -161,7 +189,7 @@ El sistema rechaza nombres duplicados de categoría, y duplicados de nombre+rol 
 
 ---
 
-## 13. ¿A quién acudir?
+## 14. ¿A quién acudir?
 
 Como Administradora, **tú eres el punto de contacto principal** para las demás personas usuarias del sistema (creación de cuentas, desbloqueos, restablecimiento de contraseñas, dudas sobre categorías o permisos).
 

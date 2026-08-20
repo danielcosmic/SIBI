@@ -49,16 +49,36 @@ Verás tarjetas resumen (total de activos, en desecho, categorías) y una tarjet
 
 ---
 
-## 5. Crear un activo nuevo
+## 5. Paso a paso: cómo ingresar activos (uno por uno o en bloque)
 
-Sí puedes dar de alta un activo nuevo en el inventario sin pasar por aprobación (la creación es directa): completa placa, tipo de placa, marca, modelo, número de serie, artículo, categoría, ubicación y encargado.
+Esta es la única parte de tu rol donde sí trabajas de forma directa, sin pasar por aprobación: dar de alta activos nuevos que todavía no existen en el inventario. (Corregir un activo ya existente sí requiere una solicitud — ver punto 6).
 
-- Si el **encargado** que necesitas todavía no existe, puedes crearlo tú misma/o desde el mismo formulario (nombre y cargo/rol), sin salir del proceso de creación del activo.
-- Si la **categoría** que necesitas todavía no existe, no puedes crearla tú: contacta a un administrador para que la cree primero.
+### 5.1 Ingresar un activo individual
 
-También puedes usar el botón "Importar Excel" para dar de alta varios activos a la vez (ver punto 8), y los botones "Excel"/"PDF" para exportar el inventario filtrado.
+1. Ve a "Inventario" y haz clic en **"Nuevo Activo"** (arriba a la derecha).
+2. Completa el formulario, dividido en cuatro bloques:
+   - **Identificación**: Placa* (máx. 8 caracteres), Tipo de Placa* (Institucional o Interno), Artículo* (máx. 20), N° Serial* (máx. 30), Marca* (máx. 30), Modelo* (máx. 20).
+   - **Clasificación**: Categoría* — búscala en el selector. Si no existe la que necesitas, no puedes crearla desde aquí: contacta a un administrador para que la agregue primero.
+   - **Ubicación y Responsable**: Ubicación Actual* (texto libre, máx. 30) y Encargado* — búscalo en el selector, o crea uno nuevo con "Nuevo encargado" (nombre y cargo/rol) sin salir del formulario.
+   - **Observaciones** (opcional, hasta 200 caracteres).
+3. Haz clic en **"Confirmar y Crear"**: se abre una pantalla de revisión con todos los datos agrupados. Si algo está mal, usa "Editar" para volver al formulario; si todo está correcto, haz clic en **"Confirmar y Crear"** de nuevo para guardarlo definitivamente.
+4. El activo queda creado con estado "Activo" y aparece de inmediato en el inventario. Si detectas un error justo después (por ejemplo, la placa mal escrita), puedes eliminarlo tú misma/o con el botón "Eliminar" en su vista rápida — solo funciona **dentro de los primeros 10 minutos** desde la creación (verás la cuenta regresiva en el propio botón). Pasado ese tiempo, el sistema ya no te deja borrarlo directamente: tendrás que enviar una solicitud de cambio para corregirlo (ver punto 6).
 
-Si detectas un error justo después de crear un activo (por ejemplo, escribiste mal la placa), puedes eliminarlo tú misma/o **dentro de los primeros 10 minutos** (el botón muestra una cuenta regresiva). Pasado ese tiempo, el sistema ya no te deja borrarlo directamente: tendrás que enviar una solicitud de cambio para corregirlo.
+### 5.2 Ingresar activos en bloque (Excel o CSV)
+
+Es un asistente de 3 o 4 pasos (el paso de "Entidades" solo aparece si hace falta resolver algo):
+
+1. En "Inventario", haz clic en **"Importar Excel"**. En el **paso 1 ("Preparar archivo")** verás la lista de categorías y encargados que ya existen en el sistema (útil para escribir los nombres exactos en tu archivo) y el botón **"Descargar plantilla (.xlsx)"**. Complétala con una fila por activo, **sin modificar los encabezados**, respetando el orden de columnas: `Placa, Tipo Placa, Artículo, Marca, Modelo, N° Serial, Categoría, Ubicación Actual, Encargado, Observaciones`. El campo Tipo Placa debe ser `Institucional` o `Interno`/`Interna`. Luego arrastra el archivo a la zona de carga o haz clic para seleccionarlo (acepta `.xlsx`, `.xls` o `.csv`).
+2. Haz clic en **"Previsualizar"** para pasar al **paso 2 ("Vista previa")**: una tabla te muestra cada fila con sus datos y, si hay un problema, el motivo en rojo. Las categorías o encargados que el sistema no reconoce se marcan con una etiqueta amarilla "Nuevo", y los nombres de encargado que coinciden con más de una persona registrada se marcan "Duplicado". Si hay errores de datos (campos vacíos, etc.), corrige el archivo original y vuelve a subirlo desde el paso 1.
+3. Si todas las filas son válidas y no hay entidades nuevas ni ambiguas, el botón dice directamente **"Importar N activos"** — haz clic y listo. Si el sistema detectó categorías/encargados nuevos o nombres duplicados, verás en cambio **"Siguiente →"**, que te lleva al **paso 3 ("Entidades")**, donde:
+   - Apruebas o descartas cada encargado nuevo (checkbox) indicando su cargo/rol — esto sí funciona para tu rol.
+   - **Cuidado con las categorías nuevas**: el asistente te deja marcar la casilla para aprobar una categoría que no existe, pero la creación de categorías está reservada a un administrador — si apruebas una categoría nueva, esa parte falla en silencio y las filas que dependen de ella terminarán con error "Categoría no encontrada" en el paso de resultados. Si tu archivo usa una categoría que no existe todavía, pide a un administrador que la cree antes de importar, en vez de aprobarla desde aquí.
+   - Para nombres parecidos a uno ya existente, eliges si es "la misma" (usar la existente) o si en realidad es una nueva.
+   - Para nombres duplicados dentro del propio archivo (la misma categoría o persona escrita de formas distintas), eliges cuál nombre usar para todas esas filas.
+   - Para encargados con nombre ambiguo en el sistema (varias personas con el mismo nombre), eliges cuál de ellas es la correcta para esas filas.
+4. Haz clic en **"Confirmar e importar"**: llegas al **paso 4 ("Resultados")**, con el conteo de activos creados, placas que ya existían (omitidas) y filas con error (con el detalle de cada una). Los activos creados ya están disponibles en el inventario al cerrar el asistente.
+
+También tienes los botones "Excel"/"PDF" en Inventario para exportar el listado filtrado.
 
 ---
 
@@ -67,7 +87,7 @@ Si detectas un error justo después de crear un activo (por ejemplo, escribiste 
 Este es el flujo central de tu rol:
 
 1. Ve al inventario, busca el activo (por placa, marca, modelo, etc.) y ábrelo (clic sobre la fila abre una vista rápida).
-2. En la vista rápida verás dos botones específicos para tu rol: **"Solicitar Cambio"** (ámbar) para proponer modificaciones a sus datos, y **"Solicitar Desecho"** (rojo, ver punto 7) si lo que necesitas es enviarlo a Desecho. Ninguno de los dos aparece si el activo ya está en Desecho o si ya tienes una solicitud pendiente sobre él.
+2. En la vista rápida verás dos botones específicos para tu rol: **"Solicitar Cambio"** (ámbar) para proponer modificaciones a sus datos, y **"Solicitar Desecho"** (rojo, ver más abajo) si lo que necesitas es enviarlo a Desecho. Ninguno de los dos aparece si el activo ya está en Desecho o si ya tienes una solicitud pendiente sobre él.
 3. En "Solicitar Cambio" completas los campos que quieres modificar (marca, modelo, categoría, ubicación, encargado, estado, observaciones, etc.).
 4. Al enviar la solicitud, queda en estado **Pendiente**. El sistema notifica automáticamente en tiempo real a quienes pueden revisarla (tú no recibes confirmación push, solo queda registrada).
 5. El activo **no cambia todavía** — solo se actualizará si la solicitud es aprobada.
@@ -95,13 +115,7 @@ Puedes buscar y filtrar el inventario completo (por texto, categoría o estado) 
 
 ---
 
-## 8. Importar activos desde Excel o CSV
-
-Puedes usar la importación masiva de activos: descarga la plantilla, complétala sin tocar los encabezados, y súbela — acepta archivos `.xlsx`, `.xls` o `.csv`. El sistema valida cada fila y te indica cuáles se importaron con éxito y cuáles fallaron, con el motivo (por ejemplo, categoría o encargado no encontrado — en ese caso, contacta a un administrador para que existan antes de reintentar esa fila).
-
----
-
-## 9. Limitaciones a tener en cuenta (resumen)
+## 8. Limitaciones a tener en cuenta (resumen)
 
 - Todo cambio sobre un activo **ya existente** pasa por un proceso de aprobación — planifica tiempo para eso, no es instantáneo.
 - No puedes crear categorías nuevas (sí puedes crear encargados); si te falta una categoría para completar un formulario, pide que la creen antes de continuar.
@@ -112,7 +126,7 @@ Puedes usar la importación masiva de activos: descarga la plantilla, complétal
 
 ---
 
-## 10. Preguntas frecuentes y errores comunes
+## 9. Preguntas frecuentes y errores comunes
 
 **"No encuentro el botón para editar un activo."**
 Es correcto: tu rol no tiene edición directa. En la vista rápida del activo busca los botones **"Solicitar Cambio"** o **"Solicitar Desecho"** — son tu forma de proponer modificaciones.
@@ -140,7 +154,7 @@ No aparece si el activo ya está en estado Desecho, o si ya tienes una solicitud
 
 ---
 
-## 11. ¿A quién acudir?
+## 10. ¿A quién acudir?
 
 - Para que se apruebe o rechace una solicitud con urgencia, o para que se cree una categoría que necesitas, contacta directamente a un administrador del sistema.
 - Para dudas sobre el uso del sistema, tu contraseña, o cualquier problema técnico, puedes escribir a **soporte.eic@ucr.ac.cr**.

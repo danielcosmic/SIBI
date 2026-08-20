@@ -26,6 +26,9 @@ public class AuthController : ControllerBase
     [HttpPost("recuperar")]
     public async Task<IActionResult> Recuperar([FromBody] RecuperarContrasenaRequest request)
     {
+        if (request.Correo.Equals("soporte.eic@ucr.ac.cr", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { mensaje = "La contraseña de esta cuenta no puede recuperarse desde la aplicación." });
+
         var tempPassword = await _auth.RecuperarContrasenaAsync(request.Correo);
         if (tempPassword is null)
             return NotFound(new { mensaje = "Correo no encontrado o cuenta inactiva." });
@@ -39,6 +42,10 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> CambiarContrasena([FromBody] CambiarContrasenaRequest request)
     {
         var correo = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        if (correo.Equals("soporte.eic@ucr.ac.cr", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { mensaje = "La contraseña de esta cuenta no puede modificarse desde la aplicación." });
+
         var resultado = await _auth.CambiarContrasenaAsync(correo, request.ContrasenaActual, request.NuevaContrasena);
         return resultado switch
         {

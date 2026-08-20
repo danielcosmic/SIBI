@@ -1,7 +1,6 @@
--- Usuario administrador inicial
--- Generar el hash con: cd tools/HashGenerator && dotnet run "TuContrasena"
--- Pegar el resultado ($2a$11$...) en el campo Contrasena de abajo
--- EsContrasenaTemporal = 1 obliga a cambiarla en el primer inicio de sesión
+-- Usuario administrador principal (soporte.eic@ucr.ac.cr)
+-- Contraseña fija, solo modificable directamente en base de datos.
+-- EsContrasenaTemporal = 0 — nunca se le pedirá cambiarla desde la app.
 
 IF NOT EXISTS (SELECT 1 FROM Usuario WHERE Correo = 'soporte.eic@ucr.ac.cr')
 BEGIN
@@ -9,9 +8,9 @@ BEGIN
     VALUES (
         'Administradora EIC',
         'soporte.eic@ucr.ac.cr',
-        '$2a$11$reBvEcYouLwal5af73u7C.ZihYmd7i0UwgN1CuzzzrSH6vOob3t2a',
+        '$2a$11$1Y1hjw9k.4l32F8Qx2r6zuD/zBHJ.DoReOR7X9zcm1ZSR6XDbPOY2',
         'Administradora',
-        1,
+        0,
         0,
         1
     );

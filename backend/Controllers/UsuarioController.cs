@@ -53,6 +53,10 @@ public class UsuarioController : ControllerBase
     [HttpPost("{correo}/desbloquear")]
     public async Task<IActionResult> Desbloquear(string correo)
     {
+        const string cuentaSoporte = "soporte.eic@ucr.ac.cr";
+        if (correo.Equals(cuentaSoporte, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { mensaje = "La contraseña de la cuenta principal no puede modificarse desde la aplicación." });
+
         var usuario = await _db.Usuarios.FindAsync(correo);
         if (usuario is null) return NotFound();
 
@@ -68,6 +72,10 @@ public class UsuarioController : ControllerBase
     [HttpPost("{correo}/reset-contrasena")]
     public async Task<IActionResult> ResetContrasena(string correo)
     {
+        const string cuentaSoporte = "soporte.eic@ucr.ac.cr";
+        if (correo.Equals(cuentaSoporte, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { mensaje = "La contraseña de la cuenta principal no puede modificarse desde la aplicación." });
+
         var correoActual = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (correo == correoActual)
             return BadRequest(new { mensaje = "No puedes restablecer tu propia contraseña desde aquí." });
