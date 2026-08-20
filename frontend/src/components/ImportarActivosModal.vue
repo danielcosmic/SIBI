@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999">
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999" @click.self="$emit('close')">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
 
       <!-- Header -->
