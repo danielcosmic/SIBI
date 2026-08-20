@@ -116,9 +116,12 @@ public class UsuarioController : ControllerBase
         if (correo == cuentaSoporte && request.Permisos != "Administradora")
             return BadRequest(new { mensaje = "El rol de la cuenta de soporte no puede modificarse." });
 
+        if (correo == cuentaSoporte && !request.Activo)
+            return BadRequest(new { mensaje = "La cuenta principal no puede desactivarse." });
+
         usuario.Nombre = request.Nombre;
         usuario.Permisos = correo == cuentaSoporte ? "Administradora" : request.Permisos;
-        usuario.Activo = request.Activo;
+        usuario.Activo = correo == cuentaSoporte ? true : request.Activo;
         await _db.SaveChangesAsync();
         return NoContent();
     }
