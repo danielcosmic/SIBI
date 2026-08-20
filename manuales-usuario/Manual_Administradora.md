@@ -2,7 +2,7 @@
 
 **Sistema SIBI — Inventario de Bienes Institucionales, EIC-UCR**
 
-Este manual es para personas con rol **Administradora**: el nivel de acceso más alto del sistema. Si tu cuenta tiene este rol, tienes control total sobre activos, usuarios, categorías, encargados y las decisiones finales de aprobación/baja.
+Este manual es para personas con rol **Administradora**: el nivel de acceso más alto del sistema. Si tu cuenta tiene este rol, tienes control total sobre activos, usuarios, categorías, encargados y las decisiones finales de aprobación/rechazo.
 
 ---
 
@@ -13,7 +13,7 @@ La Administradora es la única que puede:
 - Gestionar **usuarios del sistema** (crear cuentas, bloquear/desbloquear, restablecer contraseñas, eliminar).
 - Gestionar **categorías** de activos (crear, editar, eliminar).
 - **Eliminar definitivamente** un activo que lleva un año o más en estado Desecho.
-- **Aprobar o rechazar** una solicitud de baja (desecho) de un activo.
+- **Aprobar o rechazar** una solicitud de desecho de un activo.
 - **Aprobar o rechazar** las solicitudes de cambio pendientes.
 - **Eliminar encargados** del sistema.
 
@@ -26,7 +26,7 @@ En resumen: eres el rol que **no depende de nadie más** para tomar decisiones d
 ## 2. Iniciar sesión y primer acceso
 
 1. Entra a la URL del sistema y escribe tu correo institucional (`@ucr.ac.cr`) y tu contraseña. El sistema valida que el correo termine en `@ucr.ac.cr` antes de intentar el login.
-2. Si tu cuenta es nueva o alguien te restableció la contraseña, el sistema te dará una **contraseña temporal**. Al iniciar sesión con ella, el sistema te obligará automáticamente a cambiarla (pantalla "Cambiar Contraseña") antes de dejarte usar cualquier otra pantalla — ahí solo debes escribir y confirmar la nueva contraseña, no te pide la temporal de nuevo.
+2. Si tu cuenta es nueva o alguien te restableció la contraseña, el sistema te dará una **contraseña temporal**. Al iniciar sesión con ella, el sistema te obligará automáticamente a cambiarla (pantalla "Cambiar Contraseña") antes de dejarte usar cualquier otra pantalla — ahí solo debes escribir y confirmar la nueva contraseña, no te pide la temporal de nuevo. (Si estas utilizando la cuenta ***soporte.eic@ucr.ac.cr** esta tiene contraseña fija ````Bien.EIC2026*````)
 3. La nueva contraseña debe cumplir 4 requisitos, que la pantalla te va marcando en verde a medida que los cumples: **mínimo 6 caracteres, una mayúscula, una minúscula y un número**.
 4. Si escribes tu contraseña incorrectamente, la pantalla de login te muestra "Credenciales incorrectas" con un contador ("Intento X de 3") y dos botones: **Cambiar cuenta** (borra también el correo) o **Volver a intentar** (mantiene el correo, solo borra la contraseña). Al tercer intento fallido tu cuenta queda bloqueada y el botón para reintentar se deshabilita.
 5. Si esto te pasa a ti (tu propia cuenta queda bloqueada), necesitas que **otra cuenta con este mismo nivel de acceso** te desbloquee desde la sección de Usuarios (ver punto 4). Por eso es buena práctica que exista más de una cuenta con acceso total activa al mismo tiempo.
@@ -48,12 +48,12 @@ Esta pantalla (menú "Usuarios", visible solo para tu rol) tiene una tabla con c
 - **Crear un usuario nuevo** (botón "Nuevo Usuario"): indicas nombre, correo (debe terminar en `@ucr.ac.cr`, si no el sistema lo rechaza) y el rol (Administradora, GTI, Jefa Administrativa o Invitado). Al guardar, el sistema muestra en pantalla el correo y una **contraseña temporal de 8 caracteres**, con un botón "Copiar credenciales" y la advertencia de que, una vez cierres ese recuadro, **la contraseña no vuelve a mostrarse** — el sistema te pide confirmar explícitamente ("¿Ya guardó las credenciales?") antes de dejarte cerrarlo. Debes comunicarla a la persona por un canal seguro (Teams, en persona, etc.); no se envía por correo automáticamente.
 - **Desbloquear una cuenta** (ícono de candado, visible solo si la cuenta tiene 3+ intentos fallidos): genera una contraseña temporal nueva y resetea el contador de intentos fallidos. Muestra el mismo tipo de recuadro de credenciales de un solo vistazo.
 - **Restablecer la contraseña de otra persona** (ícono de llave): abre un flujo de dos pasos por seguridad. Primero debes **escribir el correo exacto de esa persona** para confirmar (el botón de confirmar solo se activa si coincide letra por letra); el sistema te advierte que la contraseña actual queda invalidada de inmediato. Al confirmar, se genera la nueva temporal. No puedes usar esta opción sobre tu propia cuenta ni sobre la cuenta de soporte (`soporte.eic@ucr.ac.cr`) — ambos íconos aparecen deshabilitados para esos casos.
-- **Editar** (ícono de lápiz): nombre, rol o estado (Activo/Inactivo) de una cuenta.
+- **Editar** (ícono de lápiz): nombre, rol o estado (Activo/Inactivo) de una cuenta. Si una cuenta pasa a estado **Inactivo** el sistema no permite que esa cuenta logre iniciar sesión en el sistema, aunque la contraseña ingresada sea la correcta, solo pasando la cuenta a estado **Activo** la cuenta vuelve a estar disponible para ingresar al sistema.
 - **Eliminar** (ícono de basura): no puedes eliminar tu propia cuenta ni la cuenta de soporte — ambos íconos aparecen deshabilitados para esos casos.
 
-**Protecciones especiales sobre `soporte.eic@ucr.ac.cr`**: no se le puede cambiar el rol (el selector de rol aparece bloqueado en su formulario de edición), no se le puede desactivar (el campo "Estado" ni siquiera aparece al editarla) y no se puede eliminar. Es la cuenta de resguardo para que el sistema nunca se quede sin una Administradora funcional.
+**Protecciones especiales sobre `soporte.eic@ucr.ac.cr`**: no se le puede cambiar el rol (el selector de rol aparece bloqueado en su formulario de edición), no se le puede desactivar (el campo "Estado" ni siquiera aparece al editarla) y no se puede eliminar. Es la cuenta de resguardo para que el sistema nunca se quede sin una Administradora funcional. Tiene como contraseña fija ````Bien.EIC2026*````
 
-**Recomendación de buenas prácticas**: no dejes solo un usuario con acceso total activo en el sistema. Si esa única cuenta se bloquea o pierde acceso, nadie podrá desbloquearla desde dentro del sistema y se necesitará intervención directa en la base de datos por parte del equipo técnico.
+**Recomendación de buenas prácticas**: no dejes solo un usuario con acceso total activo en el sistema. Si esa única cuenta se bloquea o pierde acceso, nadie podrá desbloquearla desde dentro del sistema y se necesitará intervención directa en la base de datos.
 
 ---
 
@@ -108,14 +108,14 @@ Este es un asistente de 3 o 4 pasos (el paso de "Entidades" solo aparece si hace
 
 ---
 
-## 8. Desecho: aprobar o rechazar bajas definitivas
+## 8. Desecho: aprobar o rechazar rechazos definitivas
 
 Esta pantalla es visible para cualquier rol (incluye un botón "Imprimir PDF" para exportar el reporte), pero **las acciones son exclusivas de tu rol**. Un activo llega a Desecho de dos formas: directamente (alguien con permiso de edición lo marca así) o por una solicitud de desecho aprobada. En ambos casos, si hay información disponible, verás quién lo envió o solicitó y quién lo aprobó, en una nota "Responsable del desecho" sobre cada tarjeta. Cada tarjeta muestra una barra de progreso de días transcurridos sobre 365. Tú decides:
 
 - **Recuperar** (botón): el activo vuelve a estado Activo, como si nunca se hubiera propuesto desechar.
 - **Aprobar Eliminación** (botón, solo habilitado cuando el activo lleva 365 días o más en Desecho): abre una confirmación con los datos del activo, y luego una **segunda confirmación** más severa (con una pequeña animación de advertencia) antes de ejecutar el borrado. Esta acción es irreversible: borra el activo y todo lo asociado a esa placa (historial, solicitudes de cambio) de forma permanente. Úsala con mucho cuidado — no hay manera de deshacerla desde el sistema.
 
-Este período de espera de un año es una salvaguarda intencional del sistema para evitar bajas apresuradas.
+Este período de espera de un año es una salvaguarda intencional del sistema para evitar rechazos apresuradas.
 
 ---
 
