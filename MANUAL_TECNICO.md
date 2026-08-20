@@ -26,7 +26,7 @@ Este documento existe para que cualquier desarrollador que no conozca el proyect
 14. [Matriz de permisos por rol](#14-matriz-de-permisos-por-rol)
 15. [Decisiones de diseño y por qué existen](#15-decisiones-de-diseño-y-por-qué-existen)
 16. [Deuda técnica y limitaciones conocidas](#16-deuda-técnica-y-limitaciones-conocidas)
-17. [Troubleshooting](#17-troubleshooting)
+17. [Preguntas frecuentes y errores comunes](#17-preguntas-frecuentes-y-errores-comunes-troubleshooting)
 18. [Dónde tocar el código para tareas comunes](#18-dónde-tocar-el-código-para-tareas-comunes)
 
 ---
@@ -271,12 +271,12 @@ erDiagram
 2. Si la base `SIBI` **no existe**: ejecuta en orden `SIBI.sql` → `migrate.sql` (renombrado desde `migrate_categoria_nvarchar.sql`) → `seed.sql`.
 3. Si ya existe, no hace nada (los datos persisten en el volumen Docker `mssql-data`).
 
-`seed.sql` inserta el usuario administrador inicial (`soporte.eic@ucr.ac.cr`) **solo si no existe**, con el hash de contraseña como placeholder `REEMPLAZAR_CON_EL_HASH`. **Ese hash hay que generarlo manualmente antes del primer despliegue** con la herramienta de consola en `tools/HashGenerator`:
+`seed.sql` inserta el usuario administrador inicial (`soporte.eic@ucr.ac.cr`) **solo si no existe**. Tanto `seed.sql` como el `INSERT` final de `SIBI.sql` ya traen horneado un hash BCrypt real (`$2a$11$reBvEcYouLwal5af73u7C.ZihYmd7i0UwgN1CuzzzrSH6vOob3t2a`) en vez del placeholder `REEMPLAZAR_CON_EL_HASH`/`HASH_PENDIENTE` original — es decir, la cuenta administradora ya tiene una contraseña temporal conocida de fábrica. **Para cualquier entorno que no sea descartable (staging, producción), reemplace ese hash por uno nuevo** antes de desplegar, generándolo con la herramienta de consola en `tools/HashGenerator`, para no dejar una contraseña de fábrica reutilizada entre instalaciones:
 
 ```bash
 cd tools/HashGenerator
 dotnet run "MiContrasenaTemporal123!"
-# Copiar el hash $2a$11$... resultante y pegarlo en database/seed.sql
+# Copiar el hash $2a$11$... resultante y pegarlo en database/seed.sql y/o SIBI.sql
 ```
 
 ---
@@ -320,6 +320,7 @@ Detalles de endpoints no obvios en `ActivoController` (el controller más grande
 - `DELETE /api/activo/{placa}/reciente`: permite borrar un activo **recién creado** (ventana de 10 minutos desde su `Historial` tipo `Creacion`), pensado como "deshacer" rápido de un error de captura. Pasado ese tiempo, retorna `400`.
 - `DELETE /api/activo/{placa}`: eliminación **definitiva**, solo `Administradora`, y solo si el activo lleva **al menos 365 días** en estado `Desecho` (`hoy.DayNumber - activo.FechaDesecho.Value.DayNumber < 365` → rechazo). Borra en cascada manual: `Historial`, `SolicitudCambio`, `Activo`, `Placa`, `Ubicacion` (en ese orden, porque EF no tiene `ON DELETE CASCADE` configurado — todas las FK son `DeleteBehavior.Restrict`).
 - `GET /api/activo/recientes`: activos creados más recientemente **dentro de una categoría**, usado en el Dashboard.
+- `GET /api/activo/{placa}/desecho-info`: resuelve **quién envió el activo a Desecho** y cómo. Busca primero una `SolicitudCambio` con `Estado = "Aprobada"` cuyo `DatosNuevos.Estado` sea `"Desecho"` (devuelve `tipo: "solicitud"` con el nombre de quien la solicitó y quien la aprobó); si no encuentra una, busca en `Historial` la entrada `CambioEstado` más reciente cuya descripción contenga "Desecho" (devuelve `tipo: "directo"` con quien lo hizo). Devuelve `204 No Content` si el activo no está en Desecho o no hay información. Usado por `ActivoModal`, `ActivoDetalleView` y `DesechoController.Listar` (que resuelve lo mismo en lote para toda la lista, campo `desechoInfo` en cada item) para mostrar el "Responsable del desecho" en la UI.
 
 ### 6.3 DTOs
 
@@ -359,7 +360,7 @@ Estos `meta` flags son la **única** barrera de UI para ocultar rutas por rol; e
 ### 7.3 Estado global (Pinia)
 
 - **`stores/auth.js`**: guarda `token` y `usuario` (ambos persistidos en `localStorage` bajo las claves `sibi_token` / `sibi_usuario`). Expone getters de conveniencia por rol (`esAdministradora`, `esGTI` — que incluye Administradora, `esJefaAdministrativa`, `esInvitado`) usados tanto por el router como por las vistas para mostrar/ocultar UI.
-- **`stores/notificaciones.js`**: mantiene la conexión SignalR y la lista de notificaciones recibidas en memoria (no persiste en `localStorage`; si se recarga la página se pierden las notificaciones ya mostradas, solo llegan las nuevas mientras la conexión esté viva).
+- **`stores/notificaciones.js`**: mantiene la conexión SignalR y la lista de notificaciones recibidas en memoria (no persiste en `localStorage`; si se recarga la página se pierden las notificaciones ya mostradas, solo llegan las nuevas mientras la conexión esté viva). `AppLayout.vue` solo llama `notifStore.conectar(...)` cuando `auth.esGTI` es verdadero (GTI o Administradora) — `JefaAdministrativa` e `Invitado` nunca abren conexión SignalR ni reciben push en tiempo real; deben revisar sus pantallas manualmente para ver cambios de estado.
 
 ### 7.4 Capa de servicios (`src/services/`)
 
@@ -373,14 +374,18 @@ Cada archivo es un wrapper 1:1 sobre un controller del backend (mismo nombre de 
 
 | Archivo | Responsabilidad |
 |---|---|
-| `AppLayout.vue` | Sidebar de navegación (ítems condicionados por rol), topbar con buscador global de activos (autocompletado con debounce) y badge de notificaciones no leídas |
-| `ActivoModal.vue` | Modal grande (~900 líneas) para crear/editar un activo; incluye creación rápida de categoría/encargado sin salir del modal, y muestra si hay una solicitud de cambio pendiente sobre ese activo |
-| `ImportarActivosModal.vue` | Flujo de importación masiva: descarga plantilla `.xlsx`, parsea el archivo subido con SheetJS en el navegador, valida localmente, y manda las filas ya parseadas a `POST /api/activo/importar` |
+| `AppLayout.vue` | Sidebar de navegación (ítems condicionados por rol), topbar con buscador global de activos (autocompletado con debounce), badge de solicitudes pendientes y panel de notificaciones (ambos solo para `esGTI`), y un modal de **cambio de contraseña voluntario** accesible desde el menú de perfil para cualquier rol autenticado — a diferencia de `CambiarContrasenaView` (solo para el primer login con contraseña temporal), este sí exige la contraseña actual |
+| `ActivoModal.vue` | Modal grande (~950 líneas) para crear/ver/editar un activo; incluye creación rápida de categoría (solo `Administradora`) o encargado (GTI/Administradora/JefaAdministrativa) sin salir del modal, banner de solicitud de cambio pendiente, banner de "Responsable del desecho" (vía `GET /api/activo/{placa}/desecho-info`) cuando el activo está en estado Desecho, botón directo **"Enviar a Desecho"** para `esGTI` (edición inmediata, sin aprobación), y botones separados **"Solicitar Cambio"** / **"Solicitar Desecho"** para `esJefaAdministrativa` |
+| `ImportarActivosModal.vue` | Flujo de importación masiva: descarga plantilla `.xlsx`, acepta subir `.xlsx`, `.xls` o `.csv` (parseado con SheetJS en el navegador, como texto para CSV y como buffer binario para Excel), valida localmente, y manda las filas ya parseadas a `POST /api/activo/importar` |
 | `SearchableSelect.vue` | Combobox genérico con búsqueda, reusado para seleccionar categoría/encargado en varios formularios |
 | `AppDialog.vue` + `composables/useDialog.js` | Reemplazo de `window.confirm`/`alert` nativo: un diálogo modal único (estado singleton reactivo) invocado como `useDialog().confirm({...})` que retorna una `Promise<boolean>` |
 | `DashboardView.vue` | KPIs (tarjetas clicables que navegan a otras vistas) + gráficos por categoría; el contenido varía según rol (GTI ve tarjeta de Encargados, JefaAdministrativa ve tarjeta de Cambios Solicitados) |
-| `InventarioView.vue` | Tabla paginada/filtrable de activos, punto de entrada a `ActivoModal` |
-| `SolicitudesView.vue` / `MisSolicitudesView.vue` | Bandeja de aprobación (GTI/Administradora) vs. bandeja de solicitudes propias (JefaAdministrativa) |
+| `InventarioView.vue` | Tabla paginada/filtrable de activos, punto de entrada a `ActivoModal`; botones "Excel" y "PDF" (exportación con SheetJS/jsPDF, visibles solo para `esGTI \|\| esJefaAdministrativa`) y "Importar Excel" / "Nuevo Activo" (visibles para `esGTI \|\| esAdministradora \|\| esJefaAdministrativa`, es decir todos salvo Invitado) |
+| `CategoriasView.vue` | Grid de categorías; al hacer clic en una tarjeta (cualquier rol, incluyendo Invitado) despliega un panel inline con los activos de esa categoría, reutilizando `ActivoModal` en modo `view` |
+| `EncargadosView.vue` | Grid de encargados con panel inline de sus activos; el modal "Editar Encargado" incluye una tabla de activos con checkboxes para **reasignación en bloque** (selecciona activos → elige encargado destino en un `<select>` → botón "Aplicar"), sin pantalla aparte |
+| `DesechoView.vue` | Lista de activos en Desecho con barra de progreso hacia los 365 días, banner de "Responsable del desecho", botón "Imprimir PDF" (reporte, visible a cualquier rol con acceso a la vista) y acciones "Aprobar Eliminación"/"Recuperar" solo para `esAdministradora`, con doble confirmación (incluye una animación "shake") antes de borrar definitivamente |
+| `SolicitudesView.vue` / `MisSolicitudesView.vue` | Bandeja de aprobación (GTI/Administradora) vs. bandeja de solicitudes propias (JefaAdministrativa); las solicitudes cuyo `datosNuevos.estado === 'Desecho'` se distinguen con badge/borde rojo "Desecho" y una vista simplificada ("Activo a desechar", sin comparación campo a campo) |
+| `RecuperarContrasenaView.vue` | **No es autoservicio.** Es una página estática que muestra un enlace `mailto:soporte.eic@ucr.ac.cr` e indica contactar a un administrador o al equipo de GTI; no llama a `POST /api/auth/recuperar` en ningún punto. Ese endpoint del backend sigue existiendo y funcionando, pero ningún flujo de la UI lo invoca actualmente |
 
 `utils/emojiGrupos.js` es simplemente un catálogo de emojis agrupados por temática, usado como selector de ícono al crear una categoría (el campo `Categoria.Icono` guarda el emoji tal cual, como texto Unicode).
 
@@ -394,7 +399,7 @@ Cada archivo es un wrapper 1:1 sobre un controller del backend (mismo nombre de 
 - **Autorización por rol**: `[Authorize(Roles = "...")]` a nivel de acción o de clase en cada controller — es la fuente de verdad; el frontend solo oculta UI, no reemplaza esta validación.
 - **CORS**: abierto en desarrollo, restringido a un origen fijo en producción (ver [6.1](#61-composition-root-backendprogramcs)).
 - **Reglas de dominio de correo**: solo `@ucr.ac.cr` puede tener cuenta (`CHK_Usuario_Correo` en SQL + validación explícita en `UsuarioController.Crear`).
-- **Cuenta de soporte protegida**: `soporte.eic@ucr.ac.cr` está hardcodeada en `UsuarioController` como cuenta que no se puede eliminar ni degradar de rol `Administradora` — es la cuenta de "no quedarse sin admin".
+- **Cuenta de soporte protegida**: `soporte.eic@ucr.ac.cr` está hardcodeada en `UsuarioController` como cuenta que no se puede eliminar, ni degradar de rol `Administradora`, ni **desactivar** (`Editar` rechaza `Activo = false` para ese correo con 400) — es la cuenta de "no quedarse sin admin". El campo "Estado" ni siquiera se muestra en el formulario de edición de esa cuenta en `UsuariosView.vue`.
 
 ---
 
@@ -420,7 +425,9 @@ Cada archivo es un wrapper 1:1 sobre un controller del backend (mismo nombre de 
 | `backend` | `./backend` | ninguno (solo interno, puerto 8080) | `db` (con `condition: service_healthy`) |
 | `frontend` | `./frontend` | `8081:80` | `backend` |
 
-Es decir: **el único puerto expuesto al host es 8081** (el frontend). El backend y la base de datos solo son alcanzables entre contenedores. El healthcheck de `db` corre `sqlcmd -Q "SELECT 1"` cada 10s (hasta 15 reintentos, con 30s de gracia inicial) — el backend no arranca hasta que ese healthcheck pase.
+Es decir: **el único puerto expuesto al host es 8081** (el frontend). El backend y la base de datos solo son alcanzables entre contenedores. El healthcheck de `db` corre `sqlcmd -Q "SELECT 1"` cada 10s (hasta 15 reintentos, con 30s de gracia inicial) — el backend no arranca hasta que ese healthcheck pase. Ambos contenedores `db` y `backend` fijan `TZ: America/Costa_Rica`, para que las fechas registradas en `Historial.FechaHora`, `SolicitudCambio.FechaSolicitud`/`FechaResolucion` y `Activo.FechaDesecho` (base del conteo de 365 días para elegibilidad de eliminación) queden en hora local y no en UTC del contenedor.
+
+**`docker-compose.override.yml`** (en la raíz, no committeado a producción) es fusionado automáticamente por Docker Compose cuando existe, y fuerza `ASPNETCORE_ENVIRONMENT: Development` + `AllowedHosts: "*"` sobre el contenedor `backend` — pensado para levantar el stack completo de Docker en una máquina de desarrollo sin heredar las restricciones de producción (CORS abierto, Swagger habilitado). En el servidor real, desplegar copiando solo `docker-compose.yml`, sin este archivo.
 
 ### 10.1 Variables de entorno requeridas
 
@@ -436,7 +443,7 @@ Estas variables alimentan `ConnectionStrings__SIBI` y `Jwt__Key` del contenedor 
 ### 10.2 Construcción de cada imagen
 
 - **`backend/Dockerfile`**: build multi-stage — SDK de .NET 10 compila y publica (`dotnet publish -c Release`), la imagen final usa solo el runtime ASP.NET (más liviana, sin SDK). Expone 8080, arranca con `dotnet backend.dll`.
-- **`frontend/Dockerfile`**: build multi-stage — Node 20 corre `npm ci && npm run build` (genera `dist/`), la imagen final es `nginx:stable-alpine` sirviendo esos estáticos con la config de `nginx.conf`.
+- **`frontend/Dockerfile`**: build multi-stage — Node 24 corre `npm ci && npm run build` (genera `dist/`), la imagen final es `nginx:stable-alpine` sirviendo esos estáticos con la config de `nginx.conf`.
 - **`database/Dockerfile`**: parte de la imagen oficial de SQL Server, copia los scripts SQL y `init.sh` a `/docker-init/`, y usa `init.sh` como `ENTRYPOINT` (reemplaza el arranque por defecto para poder aplicar el esquema la primera vez).
 
 ### 10.3 Comandos operativos
@@ -573,13 +580,19 @@ sequenceDiagram
 
 Una `JefaAdministrativa` solo puede tener el efecto de sus cambios reflejado si GTI/Administradora aprueba; mientras tanto el activo real **no cambia**. `GET /api/solicitudcambio/activo/{placa}/pendiente` permite a la UI (`ActivoModal`) avisar si ya hay una solicitud pendiente sobre ese activo, para no permitir duplicados confusos.
 
+**Caso especial: solicitud de Desecho.** `ActivoModal.vue` expone un botón dedicado **"Solicitar Desecho"** (separado de "Solicitar Cambio", visible solo si `esJefaAdministrativa && estado !== 'Desecho' && !solicitudPendiente`) que llama al mismo `POST /api/solicitudcambio` pero con `estado: "Desecho"` y el resto de los campos iguales a los valores actuales del activo — es decir, la solicitud no propone ningún otro cambio, solo el paso a Desecho. El frontend la distingue visualmente (badge/borde rojo "Desecho" en vez de ámbar) tanto en `MisSolicitudesView` como en `SolicitudesView`, con una tarjeta simplificada ("Activo a desechar") en lugar de la comparación campo a campo. Al aprobarla, `SolicitudCambioController.Aprobar` ahora también fija `activo.FechaDesecho = hoy` cuando el estado cambia a `Desecho` (antes de este fix, aprobar una solicitud de este tipo dejaba `FechaDesecho` en `null`, por lo que el conteo de 365 días para elegibilidad de eliminación nunca arrancaba).
+
 ### 13.4 Flujo de baja/desecho
 
-1. Alguien con permiso edita el `Activo.Estado` a `Desecho` → se fija `FechaDesecho = hoy`.
-2. El activo aparece en `DesechoView` (`GET /api/desecho`), que calcula `diasEnDesecho` y `puedeEliminar` (≥365 días) en el propio DTO de respuesta.
+1. El activo llega a `Estado = Desecho` por dos caminos posibles:
+   - **Directo** (GTI o Administradora): editando el activo, o con el botón de un clic "Enviar a Desecho" en `ActivoModal` (`v-if="auth.esGTI"`) — aplica el cambio de inmediato vía `PUT /api/activo/{placa}`, sin aprobación.
+   - **Vía solicitud** (JefaAdministrativa): botón "Solicitar Desecho" descrito arriba, que solo toma efecto si GTI/Administradora la aprueba.
+   
+   En ambos casos se fija `FechaDesecho = hoy` en el momento en que el estado pasa a `Desecho`.
+2. El activo aparece en `DesechoView` (`GET /api/desecho`), que calcula `diasEnDesecho`, `puedeEliminar` (≥365 días) y `desechoInfo` (quién lo envió/solicitó y quién aprobó, resuelto vía la misma lógica que `GET /api/activo/{placa}/desecho-info`) en el propio DTO de respuesta. Cualquier rol autenticado puede ver esta lista y exportarla a PDF; solo `Administradora` ve los botones de acción.
 3. Una `Administradora` puede:
-   - **Rechazar** (`POST /api/desecho/{placa}/rechazar`): vuelve el activo a `Estado = Activo`, limpia `FechaDesecho`.
-   - **Aprobar** (`POST /api/desecho/{placa}/aprobar`, solo si ≥365 días): registra `Historial: Aprobacion` y **borra el activo y todas sus dependencias** de forma permanente.
+   - **Recuperar** (botón "Recuperar" en la UI → `POST /api/desecho/{placa}/rechazar`): vuelve el activo a `Estado = Activo`, limpia `FechaDesecho`.
+   - **Aprobar Eliminación** (`POST /api/desecho/{placa}/aprobar`, solo si ≥365 días, con doble confirmación en la UI): registra `Historial: Aprobacion` y **borra el activo y todas sus dependencias** de forma permanente.
 
 ### 13.5 Recuperación e importación masiva desde Excel
 
@@ -631,8 +644,8 @@ Basada en los atributos `[Authorize(Roles = "...")]` de cada controller (fuente 
 
 Documentado explícitamente para que quien retome el proyecto no las redescubra por sorpresa:
 
-1. **Envío de correo no implementado.** `AuthController.Recuperar` y `UsuarioController.Crear/Desbloquear/ResetContrasena` generan una contraseña temporal y la **devuelven en el cuerpo de la respuesta HTTP** en vez de enviarla por correo institucional. Hay configuración SMTP en `appsettings.json` (`Email:SmtpHost`, etc.) que **no se usa en ningún lado del código actual** — es un placeholder para una integración futura (probablemente Gmail SMTP con app password, a juzgar por `appsettings.Development.json`). Mientras tanto, quien opera el sistema debe comunicar la contraseña temporal manualmente por otro canal, lo cual es un riesgo de seguridad si no se hace con cuidado.
-2. **Endpoint de debug removido en el working tree actual**: había un `GET /api/auth/hash-temp` en `AuthController` que devolvía un hash BCrypt de una contraseña hardcodeada (`"CambiarEsto123!"`) — un endpoint público de generación de hash, sin autenticación. Fue eliminado en cambios locales sin commitear todavía; si se reintroduce algo similar para debug, debe protegerse o eliminarse antes de producción.
+1. **Envío de correo no implementado.** `AuthController.Recuperar` y `UsuarioController.Crear/Desbloquear/ResetContrasena` generan una contraseña temporal y la **devuelven en el cuerpo de la respuesta HTTP** en vez de enviarla por correo institucional. Hay configuración SMTP en `appsettings.json` (`Email:SmtpHost`, etc.) que **no se usa en ningún lado del código actual** — es un placeholder para una integración futura (probablemente Gmail SMTP con app password, a juzgar por `appsettings.Development.json`). Mientras tanto, quien opera el sistema debe comunicar la contraseña temporal manualmente por otro canal, lo cual es un riesgo de seguridad si no se hace con cuidado. El frontend fue incluso más lejos: `RecuperarContrasenaView.vue` ya no llama a `POST /api/auth/recuperar` en absoluto — es una página estática que remite a `soporte.eic@ucr.ac.cr`. El endpoint de backend sigue ahí, vivo pero sin ningún cliente que lo use; si se retoma el autoservicio de recuperación, hay que reconectar la vista al endpoint (o borrar el endpoint si se decide que el flujo manual es el definitivo).
+2. **Endpoint de debug eliminado (histórico)**: existió un `GET /api/auth/hash-temp` en `AuthController` que devolvía un hash BCrypt de una contraseña hardcodeada (`"CambiarEsto123!"`) — un endpoint público de generación de hash, sin autenticación. Fue eliminado (commit `dd45d65`); se deja la nota para que si se reintroduce algo similar para debug, se proteja o elimine antes de producción.
 3. **CORS de producción fija `http://` (no `https://`)** para `eic.sibi.ucr.ac.cr` en `Program.cs`. Si el sitio se sirve por HTTPS (recomendado, y necesario para que el navegador no marque el login como inseguro), este origen no calzará y el navegador bloqueará las llamadas a la API. Verificar y corregir a `https://` si aplica.
 4. **Generación de contraseñas temporales duplicada**: la misma función (8 caracteres, 1 mayúscula/1 minúscula/1 dígito garantizados, resto aleatorio) está copiada en `AuthService.GenerarContrasenaAleatoria` y `UsuarioController.GenerarContrasenaTemp`. Candidata a extraer a un servicio compartido si se vuelve a tocar.
 5. **`System.Random` para contraseñas temporales**: no es criptográficamente seguro. Aceptable dado que son contraseñas de un solo uso, forzadas a cambiar en el primer login, pero si se quiere endurecer, migrar a `RandomNumberGenerator` (`System.Security.Cryptography`).
@@ -643,18 +656,39 @@ Documentado explícitamente para que quien retome el proyecto no las redescubra 
 
 ---
 
-## 17. Troubleshooting
+## 17. Preguntas frecuentes y errores comunes (troubleshooting)
+
+### 17.1 Arranque y configuración
 
 | Síntoma | Causa probable | Dónde mirar |
 |---|---|---|
 | Backend no arranca, excepción `Jwt:Key no está configurado` | Falta `Jwt__Key` (Docker) o `Jwt:Key` (appsettings) | `Program.cs`, `.env`, `appsettings.Development.json` |
 | `docker compose up` se queda esperando el backend indefinidamente | El healthcheck de `db` no pasa (contraseña `sa` no cumple la política de complejidad de SQL Server) | Revisar `MSSQL_SA_PASSWORD` en `.env`, logs de `docker compose logs db` |
-| Login funciona pero SignalR nunca conecta / no llegan notificaciones | Token no llega al hub, o CORS bloqueando el handshake | Verificar que la ruta pase por `/hubs/` en el proxy (nginx o dev-server), y el hook `OnMessageReceived` en `Program.cs` |
-| Frontend en producción no puede llamar a la API (bloqueado por CORS) | Origen no coincide (`http` vs `https`) — ver limitación [16.3](#16-deuda-técnica-y-limitaciones-conocidas) | `Program.cs`, política `FrontendVue` |
-| Importación de Excel falla toda con "categoría no encontrada" | Nombres de categoría en el Excel no coinciden exactamente (case-insensitive, pero sin tildes/espacios extra) con `Categoria.Nombre` en base de datos | `ActivoController.Importar`, tabla `Categoria` |
-| No se puede eliminar un activo en Desecho | Aún no cumple los 365 días desde `FechaDesecho`, o el rol no es `Administradora` | `ActivoController.Eliminar` / `DesechoController.AprobarEliminacion` |
-| Usuario bloqueado tras 3 intentos fallidos | Comportamiento esperado | `Administradora` debe llamar `POST /api/usuario/{correo}/desbloquear` |
 | `dotnet run` local no conecta a la base | LocalDB no instalado/iniciado, o cadena de conexión apunta a otro servidor | `appsettings.Development.json`, `sqllocaldb info` |
+| En una máquina de desarrollo, el backend levantado con `docker compose up` expone Swagger y CORS abierto aunque `docker-compose.yml` dice `Production` | `docker-compose.override.yml` existe en la raíz y Docker Compose lo fusiona automáticamente, forzando `ASPNETCORE_ENVIRONMENT=Development` y `AllowedHosts: "*"` | `docker-compose.override.yml` — borrarlo o usar `docker compose -f docker-compose.yml up` para ignorarlo si se necesita reproducir el comportamiento real de producción |
+| Al desplegar de cero, la cuenta `soporte.eic@ucr.ac.cr` ya tiene una contraseña "de fábrica" que no generé yo | `seed.sql` y `SIBI.sql` traen horneado un hash BCrypt real, no un placeholder | Generar un hash nuevo con `tools/HashGenerator` y reemplazarlo en ambos scripts antes de cualquier despliegue que no sea descartable — ver [5.3](#53-orden-de-arranque-de-la-base-de-datos-databaseinitsh) |
+| `dotnet build`/Visual Studio muestra dos proyectos `backend` o rutas de `Controllers` duplicadas | Existe un directorio anidado accidental `backend/backend/` con su propio `Controllers/`, `bin/`, `obj/` | Ver deuda técnica [16.8](#16-deuda-técnica-y-limitaciones-conocidas); confirmar que no está referenciado por `backend.sln` antes de limpiarlo |
+
+### 17.2 Red, CORS y SignalR
+
+| Síntoma | Causa probable | Dónde mirar |
+|---|---|---|
+| Login funciona pero SignalR nunca conecta / no llegan notificaciones | Token no llega al hub, o CORS bloqueando el handshake — **o simplemente el rol conectado no es GTI/Administradora**, ya que `AppLayout.vue` solo abre la conexión `if (auth.esGTI)` | Verificar que la ruta pase por `/hubs/` en el proxy (nginx o dev-server), el hook `OnMessageReceived` en `Program.cs`, y el rol de la cuenta con la que se prueba |
+| Frontend en producción no puede llamar a la API (bloqueado por CORS) | Origen no coincide (`http` vs `https`) — ver limitación [16.3](#16-deuda-técnica-y-limitaciones-conocidas) | `Program.cs`, política `FrontendVue` |
+
+### 17.3 Datos, importación y lógica de negocio
+
+| Síntoma | Causa probable | Dónde mirar |
+|---|---|---|
+| Importación (Excel o CSV) falla toda con "categoría no encontrada" | Nombres de categoría en el archivo no coinciden exactamente (case-insensitive, pero sin tildes/espacios extra) con `Categoria.Nombre` en base de datos | `ActivoController.Importar`, tabla `Categoria` |
+| Un CSV importado muestra tildes o caracteres rotos | `ImportarActivosModal.vue` lee el CSV como texto plano (`file.text()`) asumiendo UTF-8; un archivo guardado en otra codificación (p. ej. Windows-1252 desde Excel) se corrompe al parsear | Pedir que el CSV se guarde como UTF-8, o usar `.xlsx`/`.xls` en su lugar |
+| Al modificar `ActivoController.Importar`, las filas siguientes a un error empiezan a fallar también con errores de EF Core sobre entidades ya rastreadas | Se removió el bloque que hace `ChangeTracker.Entries().State = EntityState.Detached` tras cada iteración fallida | `ActivoController.Importar` — mantener el detach explícito de entidades `Added`/`Modified` (y de `Historial`) entre filas, ya que cada fila comparte el mismo `DbContext` con ámbito de request |
+| No se puede eliminar un activo en Desecho | Aún no cumple los 365 días desde `FechaDesecho`, o el rol no es `Administradora` | `ActivoController.Eliminar` / `DesechoController.AprobarEliminacion` |
+| `GET /api/activo/{placa}/desecho-info` devuelve `204 No Content` para un activo que sí está en Desecho | No hay una `SolicitudCambio` aprobada con `DatosNuevos.Estado == "Desecho"` ni una entrada de `Historial` tipo `CambioEstado` cuya descripción contenga "Desecho" para esa placa — puede pasar si el estado se modificó por un camino que no pasa por los puntos ya cubiertos (p. ej. una migración de datos manual) | `ActivoController.DesechoInfo`, tabla `Historial` |
+| El conteo de días en Desecho parece adelantado o atrasado en unas horas | Zona horaria del contenedor. `TZ: America/Costa_Rica` está fijada para `db` y `backend` en `docker-compose.yml`, pero al correr `dotnet run` local sin Docker, la hora depende de la configuración del sistema operativo host | `docker-compose.yml`, reloj del host en desarrollo local |
+| Al filtrar activos por categoría (p. ej. desde el panel de `CategoriasView`) no aparece ninguno aunque sí existen | El backend espera `categoriaIds` como **arreglo** (`int[]?`, repetido como `categoriaIds=1&categoriaIds=2` en query string); enviar `categoriaId` en singular no filtra nada | `ActivoController.Listar`, `services/api.js` (`paramsSerializer`) — ver el bug ya corregido en `CategoriasView.vue` (commit `ec5eeee`) como referencia si se reintroduce algo similar |
+| Usuario bloqueado tras 3 intentos fallidos | Comportamiento esperado | `Administradora` debe llamar `POST /api/usuario/{correo}/desbloquear` |
+| Se edita la cuenta de soporte y el campo "Estado" no aparece en el formulario | Comportamiento esperado: `UsuariosView.vue` oculta ese campo para `soporte.eic@ucr.ac.cr` porque el backend rechaza desactivarla | `UsuarioController.Editar`, `UsuariosView.vue` |
 
 ---
 
